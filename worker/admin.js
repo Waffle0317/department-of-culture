@@ -141,6 +141,35 @@ export async function updateUser({ env, user, request, params }) {
   return json({ user: await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).bind(id).first() });
 }
 
+// Remove an account for good. The personnel record the hub opened for them
+// goes too; reports and files they wrote stay, with the author cleared.
+export async function deleteUser({ env, user, params }) {
+  const id = params[0];
+  const target = await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).bind(id).first();
+  if (!target) return error("No such user", 404);
+  if (id === user.id) return error("You cannot delete your own account");
+  if (target.role === "admin" && target.active) {
+    const admins = (await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND active = 1 AND id != ?").bind(id).first()).n;
+    if (admins === 0) return error("There must always be one active admin");
+  }
+  const stmts = [
+    env.DB.prepare("UPDATE reports SET author_id = NULL WHERE author_id = ?").bind(id),
+    env.DB.prepare("UPDATE people SET created_by = NULL WHERE created_by = ?").bind(id),
+    env.DB.prepare("UPDATE notes SET restricted_by = NULL WHERE restricted_by = ?").bind(id),
+  ];
+  if (target.person_id) {
+    const p = await env.DB.prepare("SELECT p.id FROM people p JOIN organizations o ON o.id = p.org_id WHERE p.id = ? AND o.slug = 'party'").bind(target.person_id).first();
+    if (p) {
+      stmts.push(env.DB.prepare("DELETE FROM reports WHERE person_id = ?").bind(p.id));
+      stmts.push(env.DB.prepare("UPDATE people SET reports_to = NULL WHERE reports_to = ?").bind(p.id));
+      stmts.push(env.DB.prepare("DELETE FROM people WHERE id = ?").bind(p.id));
+    }
+  }
+  stmts.push(env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id));
+  await env.DB.batch(stmts);
+  return json({ ok: true });
+}
+
 /* ---------- organizations ---------- */
 
 export async function listOrgs({ env }) {

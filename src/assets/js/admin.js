@@ -41,6 +41,7 @@
         <td class="actions">
           <button class="btn btn--red btn--sm" type="button" data-save disabled>Save</button>
           <button class="btn btn--ghost btn--sm" type="button" data-pass>Password</button>
+          ${window.DOC_ME && window.DOC_ME.id === u.id ? "" : `<button class="btn btn--ghost btn--sm" type="button" data-delete style="border-color:var(--red);color:var(--red)">Delete</button>`}
         </td>
       </tr>`).join("");
     usersBody.querySelectorAll("tr").forEach(wireUserRow);
@@ -66,6 +67,12 @@
         tr.classList.toggle("is-inactive", !$("[data-f=active]", tr).checked);
         toast("Saved");
       } catch (e) { toast(e.message, 5000); save.disabled = false; }
+    });
+    const del = $("[data-delete]", tr);
+    if (del) del.addEventListener("click", async () => {
+      const who = $(".mono", tr).textContent;
+      if (!confirm(`Delete the account "${who}" for good? Their personnel record on the Party tab goes with it. Reports they filed stay, unsigned. This cannot be undone.`)) return;
+      try { await api("DELETE", `/api/admin/users/${tr.dataset.id}`); toast("Account deleted"); await loadUsers(); } catch (e) { toast(e.message, 5000); }
     });
     $("[data-pass]", tr).addEventListener("click", async () => {
       const pw = prompt(`Temporary password for ${$(".mono", tr).textContent} (at least 6 characters). They will be asked to choose their own at next sign-in:`);
@@ -114,5 +121,9 @@
     });
   }
 
-  Promise.all([loadUsers(), loadOrgs()]).catch((e) => toast(e.message, 6000));
+  // Know who is signed in before drawing the roll, so the Delete button is hidden on your own row.
+  fetch("/api/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) window.DOC_ME = d; })
+    .catch(() => {})
+    .then(() => Promise.all([loadUsers(), loadOrgs()]))
+    .catch((e) => toast(e.message, 6000));
 })();

@@ -47,6 +47,7 @@ const ROUTES = [
   ["GET",    /^\/api\/admin\/users$/,                         adm.listUsers,    "admin"],
   ["POST",   /^\/api\/admin\/users$/,                         adm.createUser,   "admin"],
   ["PUT",    /^\/api\/admin\/users\/(\d+)$/,                  adm.updateUser,   "admin"],
+  ["DELETE", /^\/api\/admin\/users\/(\d+)$/,                  adm.deleteUser,   "admin"],
   ["GET",    /^\/api\/admin\/orgs$/,                          adm.listOrgs,     "admin"],
   ["PUT",    /^\/api\/admin\/orgs\/(\d+)$/,                   adm.updateOrg,    "admin"],
 ];
