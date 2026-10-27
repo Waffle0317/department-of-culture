@@ -14,6 +14,11 @@
   function toast(msg, ms = 3000) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastEl._h); toastEl._h = setTimeout(() => { toastEl.hidden = true; }, ms); }
 
   const tierSel = (name, v) => `<select data-f="${name}">${[0, 1, 2, 3].map((t) => `<option value="${t}" ${t === Number(v) ? "selected" : ""}>${t === 0 ? "none" : "Tier " + t}</option>`).join("")}</select>`;
+  const DIVS = ["public", "secret", "government"];
+  const divBoxes = (v) => {
+    const set = String(v || "").split(",");
+    return `<div class="adm__divs">${DIVS.map((d) => `<label><input type="checkbox" data-div="${d}" ${set.includes(d) ? "checked" : ""}> ${d[0].toUpperCase() + d.slice(1)}</label>`).join("")}</div>`;
+  };
 
   /* ---------- users ---------- */
   const usersBody = $("#usersTable tbody");
@@ -24,7 +29,7 @@
         <td class="mono">${esc(u.username)}</td>
         <td><input type="text" data-f="name" value="${esc(u.name)}" maxlength="80"></td>
         <td><select data-f="role"><option value="member" ${u.role === "member" ? "selected" : ""}>Curator</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select></td>
-        <td><select data-f="division">${["public", "secret", "government"].map((v) => `<option value="${v}" ${u.division === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select></td>
+        <td>${divBoxes(u.division)}</td>
         <td>${tierSel("tier_public", u.tier_public)}</td>
         <td>${tierSel("tier_secret", u.tier_secret)}</td>
         <td>${tierSel("tier_government", u.tier_government)}</td>
@@ -41,13 +46,15 @@
   function rowValues(tr) {
     const v = {};
     tr.querySelectorAll("[data-f]").forEach((i) => { v[i.dataset.f] = i.type === "checkbox" ? (i.checked ? 1 : 0) : i.value; });
+    const divs = [...tr.querySelectorAll("[data-div]")];
+    if (divs.length) v.division = divs.filter((c) => c.checked).map((c) => c.dataset.div);
     return v;
   }
 
   function wireUserRow(tr) {
     const save = $("[data-save]", tr);
-    tr.querySelectorAll("[data-f]").forEach((i) => i.addEventListener("input", () => { tr.classList.add("is-dirty"); save.disabled = false; }));
-    tr.querySelectorAll("[data-f]").forEach((i) => i.addEventListener("change", () => { tr.classList.add("is-dirty"); save.disabled = false; }));
+    tr.querySelectorAll("[data-f],[data-div]").forEach((i) => i.addEventListener("input", () => { tr.classList.add("is-dirty"); save.disabled = false; }));
+    tr.querySelectorAll("[data-f],[data-div]").forEach((i) => i.addEventListener("change", () => { tr.classList.add("is-dirty"); save.disabled = false; }));
     save.addEventListener("click", async () => {
       save.disabled = true;
       try {
@@ -71,7 +78,8 @@
     e.preventDefault();
     const f = userForm;
     const body = {
-      username: f.username.value, name: f.name.value, password: f.password.value, role: f.role.value, division: f.division.value,
+      username: f.username.value, name: f.name.value, password: f.password.value, role: f.role.value,
+      division: [...f.querySelectorAll("[name=division]:checked")].map((c) => c.value),
       tier4: Number(f.tier4.value), tier_public: Number(f.tier_public.value), tier_secret: Number(f.tier_secret.value), tier_government: Number(f.tier_government.value),
     };
     try { await api("POST", "/api/admin/users", body); userDialog.close(); await loadUsers(); toast("Added to the roll"); }

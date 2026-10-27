@@ -152,6 +152,8 @@
 .adm__table tr.is-inactive td { opacity: .55; }
 .adm__table .mono { font-family: var(--mono); font-size: .85rem; }
 .adm__table .actions { white-space: nowrap; display: flex; gap: 6px; }
+.adm__divs { display: flex; flex-direction: column; gap: 2px; font: 500 .7rem var(--condensed); text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
+.adm__divs input[type="checkbox"] { transform: scale(1); margin-right: 4px; }
 
 /* ----- the people's notes ------------------------------------------------ */
 .notes .adm__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }

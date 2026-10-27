@@ -160,6 +160,7 @@ function me({ user }) {
     role: user.role === "admin" ? "Admin" : "Curator",
     admin: isAdmin(user),
     division: user.division,
+    divisions: String(user.division || "").split(",").filter(Boolean),
     tiers: {
       public: userTier(user, "public"),
       secret: userTier(user, "secret"),

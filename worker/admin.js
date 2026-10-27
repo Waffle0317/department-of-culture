@@ -13,6 +13,14 @@ async function readJson(request) {
 const tier = (v) => Math.max(0, Math.min(3, Number(v) || 0));
 const flag = (v) => (v === true || v === 1 || v === "1" ? 1 : 0);
 
+// Divisions are stored as a comma-separated set, e.g. "public,secret".
+// Accepts an array or a comma-separated string; unknown names are dropped.
+function divisions(v) {
+  const list = Array.isArray(v) ? v : String(v || "").split(",");
+  const set = DIVISIONS.filter((d) => list.map((x) => String(x).trim().toLowerCase()).includes(d));
+  return set.join(",");
+}
+
 export async function listUsers({ env }) {
   const users = (await env.DB.prepare(`SELECT ${USER_COLS} FROM users ORDER BY active DESC, name`).all()).results;
   return json({ users });
@@ -30,7 +38,8 @@ export async function createUser({ env, request }) {
   const exists = await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(username).first();
   if (exists) return error("That username is already on the roll");
   const role = b.role === "admin" ? "admin" : "member";
-  const division = DIVISIONS.includes(b.division) ? b.division : "public";
+  const division = divisions(b.division);
+  if (!division) return error("Pick at least one division");
   const res = await env.DB.prepare(`
     INSERT INTO users (username, name, role, division, tier_public, tier_secret, tier_government, tier4, pass_hash)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -49,7 +58,8 @@ export async function updateUser({ env, user, request, params }) {
   const name = b.name !== undefined ? String(b.name).trim() : target.name;
   if (!name) return error("A display name is required");
   const role = b.role !== undefined ? (b.role === "admin" ? "admin" : "member") : target.role;
-  const division = b.division !== undefined && DIVISIONS.includes(b.division) ? b.division : target.division;
+  const division = b.division !== undefined ? divisions(b.division) : target.division;
+  if (!division) return error("Pick at least one division");
   const active = b.active !== undefined ? flag(b.active) : target.active;
   const t = {
     tier_public: b.tier_public !== undefined ? tier(b.tier_public) : target.tier_public,

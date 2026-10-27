@@ -20,12 +20,12 @@ app: true
     </div>
     <div class="adm__explain">
       <p><b>Tiers nest.</b> Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government. Each is set per compartment, so a Curator can hold Tier 3 in Public and nothing in Secret. <b>Tier 4</b> reads everything in every compartment, including the Party tab.</p>
-      <p><b>Division</b> is where the Curator sits in the Department. <b>Admin</b> may edit any file, delete, and use this hub.</p>
+      <p><b>Divisions</b> are where the Curator sits in the Department; a Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
     </div>
     <div class="adm__tablewrap">
       <table class="adm__table" id="usersTable">
         <thead><tr>
-          <th>Username</th><th>Name</th><th>Role</th><th>Division</th>
+          <th>Username</th><th>Name</th><th>Role</th><th>Divisions</th>
           <th>Public</th><th>Secret</th><th>Government</th><th>Tier 4</th><th>Active</th><th></th>
         </tr></thead>
         <tbody></tbody>
@@ -59,7 +59,11 @@ app: true
         <label class="field"><span>Display name</span><input name="name" required maxlength="80"></label>
         <label class="field"><span>Password</span><input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
         <label class="field"><span>Role</span><select name="role"><option value="member">Curator</option><option value="admin">Admin</option></select></label>
-        <label class="field"><span>Division</span><select name="division"><option value="public">Public</option><option value="secret">Secret</option><option value="government">Government</option></select></label>
+        <fieldset class="field pf__radio"><span>Divisions (one or more)</span>
+          <label><input type="checkbox" name="division" value="public" checked> Public</label>
+          <label><input type="checkbox" name="division" value="secret"> Secret</label>
+          <label><input type="checkbox" name="division" value="government"> Government</label>
+        </fieldset>
         <label class="field"><span>Tier 4 (everything)</span><select name="tier4"><option value="0">No</option><option value="1">Yes</option></select></label>
         <label class="field"><span>Public tier</span><select name="tier_public"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label>
         <label class="field"><span>Secret tier</span><select name="tier_secret"><option selected>0</option><option>1</option><option>2</option><option>3</option></select></label>
