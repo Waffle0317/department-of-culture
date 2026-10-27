@@ -28,7 +28,7 @@ Abt. II and Abt. III run placements inside agencies together: Abt. II issues the
 | **Abteilung II · Schatten** | Secret · anonymous, unseen | Anyone, anything: the clubs, halls, congregations, pressrooms and streets of the Capital | Informants under cipher; cover identities; detention on the Court's order and no one's else |
 | **Abteilung III · Öffentlichkeit** | Public · inside the agencies | VSK, NYPD, ABI, NSB and the Army's formations in the Capital | Liaisons and placed Curators inside each agency; carries the Department's requests for force to the Court or the District Attorney |
 
-A Curator is filed to one or more divisions by the Director in the admin hub. The division is where he sits; what he may read is set by his clearance in each compartment. The Collection is compartmented on the same lanes: files on the agencies and the garrison are read under Öffentlichkeit (public), files on civilians under Schatten (secret), and files on the Government and the Party under Regierung (government).
+The Collection is compartmented on the same lanes: files on the agencies and the garrison are read under Öffentlichkeit (public), files on civilians under Schatten (secret), and files on the Government and the Party under Regierung (government).
 
 ## Ranks and shared rules
 
@@ -57,29 +57,3 @@ Most of what the divisions do already rests on the Mandate on Culture and the Sp
 | Raise the class of any offence committed in defiance of a Curator | Spiritual Penal Code §65.10 |
 | Execute the process of the Court of Public Order, which may summon, arrest and detain | Court of Public Order Mandate art. 3 |
 
-<div class="callout callout--red">
-<span class="label label--red">Pending</span>
-Four things the handbooks provide for do not yet rest on any instrument and need a new order from the Public Advocate before the handbooks take full effect. They are set out in the division handbooks.
-</div>
-
-## Desks
-
-Within a division, an Oberkurator leads a desk. The four standing desks carry over and are allotted by the Director as the divisions take shape.
-
-| Desk | Covers | Main sources of material |
-| --- | --- | --- |
-| Print and Broadcast | Newspapers, books, leaflets, radio, television, film | s.6 submissions from the Department of Media and licensing offices; newsstands; Box 70 |
-| Stage, Music and Societies | Theatres, clubs, music halls, choirs, Turnvereine, social clubs, veterans' halls | Attendance at performances and meetings; Germanic Desk contacts; confidential sources |
-| Schools and Instruction | Classrooms, lectures, textbooks, sermons, Workers' Advocacy instruction | Curriculum submissions; attendance at classes; Wardens' reports |
-| Public Bodies and Observances | Conduct and speech inside offices, Council, precincts and commands; the Days and Party observances | Two-hour reports from public servants; attendance at Council and observances |
-
-## Roll of the Department
-
-| Office | Holder | Division | Sworn |
-| --- | --- | --- | --- |
-| Kulturdirektor | Wilhelm Denker | All | — |
-| Abteilungsleiter | — | Abt. I Regierung | — |
-| Abteilungsleiter | — | Abt. II Schatten | — |
-| Abteilungsleiter | — | Abt. III Öffentlichkeit | — |
-
-<p class="muted">The roll is kept here in outline only. Names of sources never appear on it.</p>
