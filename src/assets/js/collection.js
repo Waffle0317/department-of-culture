@@ -450,9 +450,9 @@
     const want = list.includes(current) ? current : list[0];
     el.pfStatus.innerHTML = list.map((s) => `<option value="${s}" ${s === want ? "selected" : ""}>${STATUS[s]}</option>`).join("");
     $("#pfParty").hidden = staff;
-    $("#pfDivisions").hidden = !staff;
-    $("#pfTitleLabel").textContent = staff ? "Post · desk · division" : "Title or post";
-    $("#pfTitle").placeholder = staff ? "e.g. Oberkurator, Stage desk, Abt. II Schatten" : "e.g. Precinct 9, Night Desk";
+    $("#pfTitleField").hidden = staff;
+    $("#pfDivisionField").hidden = !staff;
+    $("#pfDeskField").hidden = !staff;
     $("#pfInfoLabel").textContent = staff ? "Service record" : "General information";
     $("#pfInfo").placeholder = staff ? "Date sworn, postings, training, commendations, faults and lessons." : "Where seen, with whom, what said, what read. Entries record; they never accuse.";
     el.pfKicker.textContent = state.editing ? `Collection file · No. ${state.editing.id}` : (staff ? "Personnel record · the Party" : "New file");
@@ -524,14 +524,17 @@
       el.form.rank_text.value = person.rank_text || "";
       el.form.title.value = person.title || "";
       if (STATUS[person.status]) el.form.status.value = person.status;
-      const divs = String(person.division || "").split(",");
-      el.form.querySelectorAll("[name=division]").forEach((c) => { c.checked = divs.includes(c.value); });
+      const divs = String(person.division || "").split(",").filter(Boolean);
+      $("#pfDivision").value = divs.length >= 3 ? "all" : (divs[0] || "");
+      const desk = $("#pfDesk");
+      desk.value = [...desk.options].some((o) => o.value === (person.title || "")) ? person.title : "";
       el.form.info.value = person.info || "";
       el.form.party_member.value = person.party_member === 1 ? "1" : person.party_member === 0 ? "0" : "";
       el.pfPortraitPreview.hidden = !person.portrait; el.pfPortraitClear.hidden = !person.portrait;
       if (person.portrait) el.pfPortraitPreview.src = person.portrait;
     } else {
       el.pfPortraitPreview.hidden = true; el.pfPortraitClear.hidden = true;
+      $("#pfDivision").value = ""; $("#pfDesk").value = "";
     }
     setSuperior(null);
     if (person && person.reports_to) {
@@ -546,11 +549,13 @@
   el.form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = el.form;
+    const staff = !$("#pfDivisionField").hidden;
+    const divSel = $("#pfDivision").value;
     const body = {
       name: f.name.value, org_id: Number(f.org_id.value), rank_id: f.rank_id.value ? Number(f.rank_id.value) : null,
-      rank_text: f.rank_text.value, title: f.title.value, party_member: f.party_member.value === "" ? null : Number(f.party_member.value),
+      rank_text: f.rank_text.value, title: staff ? $("#pfDesk").value : f.title.value, party_member: f.party_member.value === "" ? null : Number(f.party_member.value),
       status: f.status.value, tier: Number(f.tier.value), reports_to: f.reports_to.value ? Number(f.reports_to.value) : null, info: f.info.value,
-      division: [...f.querySelectorAll("[name=division]:checked")].map((c) => c.value),
+      division: !staff ? [] : divSel === "all" ? ["government", "secret", "public"] : divSel ? [divSel] : [],
     };
     if (state.portrait !== undefined) body.portrait = state.portrait;
     el.pfSave.disabled = true;
