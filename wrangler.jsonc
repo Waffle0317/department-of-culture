@@ -3,6 +3,8 @@
   "name": "department-of-culture",
   "main": "worker/index.js",
   "compatibility_date": "2025-10-01",
+  // Keep variables and secrets set in the dashboard across deploys.
+  "keep_vars": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",

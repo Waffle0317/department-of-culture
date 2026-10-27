@@ -8,7 +8,9 @@
       err.hidden = false;
       err.textContent =
         code === "config"
-          ? "The personnel roll has not been issued to this site yet. Contact the Director."
+          ? "This site is missing its database or session key. Contact the Director."
+          : code === "empty"
+          ? "The roll is empty: no one has been issued credentials yet. The Director must set the MEMBERS secret."
           : "Credentials not recognised. The attempt has been recorded.";
     }
     var next = document.querySelector("[data-login-next]");

@@ -90,7 +90,12 @@ async function login({ request, env }) {
 
   const user = await env.DB.prepare("SELECT id, username, pass_hash, active FROM users WHERE username = ?").bind(username).first();
   const ok = user && user.active ? await verifyPassword(pass, user.pass_hash) : (await verifyPassword(pass, DECOY), false);
-  if (!ok) return redirect(`/login/?error=1&next=${encodeURIComponent(next)}`);
+  if (!ok) {
+    // Nobody on the roll at all means the first-run import had no MEMBERS secret to read.
+    const count = (await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first()).n;
+    if (count === 0) return redirect("/login/?error=empty");
+    return redirect(`/login/?error=1&next=${encodeURIComponent(next)}`);
+  }
 
   const token = await createSession(user, env.SESSION_SECRET);
   return redirect(next, { "Set-Cookie": sessionCookie(token) });
