@@ -10,6 +10,7 @@ import { isAdmin, userTier, orgAccess, personAccess, sameDivision } from "./db.j
 
 // Investigative statuses for the Collection; personnel statuses for an open (Party) tab.
 const STATUSES = ["watched", "referred", "closed", "cleared", "serving", "probation", "leave", "retired"];
+const SEVERITIES = ["severe", "moderate", "minor"];
 const MAX_PORTRAIT = 400_000; // characters of data URL (~300 KB image)
 const ORG_COLS = "id, slug, name, long_name, compartment, min_tier, sort, access";
 
@@ -135,7 +136,7 @@ export async function getPerson({ env, user, params }) {
   if (!p) return error("No such file, or clearance insufficient", 404);
   const t = readTier(user, p);
   const reports = (await env.DB.prepare(`
-    SELECT rp.id, rp.tier, rp.body, rp.created_at, rp.author_id, u.name AS author_name
+    SELECT rp.id, rp.tier, rp.title, rp.severity, rp.body, rp.created_at, rp.author_id, u.name AS author_name
     FROM reports rp LEFT JOIN users u ON u.id = rp.author_id
     WHERE rp.person_id = ? AND rp.tier <= ? ORDER BY rp.created_at DESC, rp.id DESC`).bind(p.id, t).all()).results;
   const withheld = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t).first()).n;
@@ -266,9 +267,12 @@ export async function addReport({ env, user, request, params }) {
   const body = await readJson(request);
   const text = body && s(body.body, 20000);
   if (!text) return error("A report needs words in it");
+  const title = s(body.title, 120);
+  if (!title) return error("Give the report a title");
+  const severity = SEVERITIES.includes(body.severity) ? body.severity : "minor";
   const tier = Math.min(4, Math.max(p.tier, Number(body.tier) || 0));
-  const res = await env.DB.prepare("INSERT INTO reports (person_id, author_id, tier, body) VALUES (?, ?, ?, ?)")
-    .bind(p.id, user.id, tier, text).run();
+  const res = await env.DB.prepare("INSERT INTO reports (person_id, author_id, tier, title, severity, body) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(p.id, user.id, tier, title, severity, text).run();
   await env.DB.prepare("UPDATE people SET updated_at = datetime('now') WHERE id = ?").bind(p.id).run();
   return json({ id: res.meta.last_row_id, tier, visible: readTier(user, p) >= tier }, 201);
 }

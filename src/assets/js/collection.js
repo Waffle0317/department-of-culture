@@ -374,19 +374,25 @@
         <h3>Reports (${d.reports.length})</h3>
         ${d.withheld ? `<div class="file__hidden">${d.withheld} ${d.withheld === 1 ? "report" : "reports"} withheld · higher clearance required</div>` : ""}
         <form class="file__newreport" data-report>
+          <input name="title" type="text" required maxlength="120" placeholder="Title of the report" class="file__reptitle">
           <textarea name="body" rows="3" required placeholder="What was seen or heard, when, where, and by whom."></textarea>
           <div class="row">
+            <select name="severity" title="Severity">
+              <option value="minor">Minor</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
+            </select>
             <select name="tier" title="Who may read this report">${tierOpts.join("")}</select>
             <button class="btn btn--red btn--sm" type="submit">File report</button>
           </div>
         </form>
-        <div style="margin-top:14px">
-          ${d.reports.map((r) => `
-            <article class="report">
-              <div class="report__meta"><span>${esc(r.author_name || "Unknown")} · ${fmtDate(r.created_at)}</span><span>T${r.tier}${(d.can.admin || r.author_id === d.can.me) ? ` · <button class="report__del" type="button" data-delreport="${r.id}">remove</button>` : ""}</span></div>
-              <div class="report__body">${esc(r.body)}</div>
-            </article>`).join("") || '<p class="muted" style="font-size:.95rem">No reports at your clearance.</p>'}
-        </div>
+        ${d.reports.length ? `<div class="file__sort"><span class="label">Sort</span>
+          <select data-sort>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="severity">By severity</option>
+          </select></div>` : ""}
+        <div data-reports style="margin-top:10px">${d.reports.length ? "" : '<p class="muted" style="font-size:.95rem">No reports at your clearance.</p>'}</div>
       </div>`;
     el.file.hidden = false; el.body.classList.add("has-file");
     el.file.scrollTop = 0;
@@ -403,15 +409,52 @@
       e.preventDefault();
       const f = e.target;
       try {
-        const r = await api("POST", `/api/collection/people/${p.id}/reports`, { body: f.body.value, tier: Number(f.tier.value) });
+        const r = await api("POST", `/api/collection/people/${p.id}/reports`, { title: f.title.value, severity: f.severity.value, body: f.body.value, tier: Number(f.tier.value) });
         if (!r.visible) toast("Filed above your clearance; you will not see it again");
         await openFile(p.id); await load();
       } catch (err) { toast(err.message); }
     });
-    el.file.querySelectorAll("[data-delreport]").forEach((b) => b.addEventListener("click", async () => {
-      if (!confirm("Remove this report?")) return;
-      try { await api("DELETE", `/api/collection/reports/${b.dataset.delreport}`); await openFile(p.id); await load(); } catch (err) { toast(err.message); }
-    }));
+
+    // Reports: collapsed to their title line, opened on click, sorted by the box above.
+    const SEV_RANK = { severe: 0, moderate: 1, minor: 2 };
+    const SEV_LABEL = { severe: "Severe", moderate: "Moderate", minor: "Minor" };
+    const listEl = $("[data-reports]", el.file);
+    const open = new Set();
+    function renderReports(mode) {
+      const list = [...d.reports];
+      if (mode === "oldest") list.reverse();
+      if (mode === "severity") list.sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9) || b.id - a.id);
+      listEl.innerHTML = list.map((r) => `
+        <article class="report report--${r.severity || "minor"} ${open.has(r.id) ? "is-open" : ""}" data-rid="${r.id}">
+          <button class="report__head" type="button" data-toggle="${r.id}" aria-expanded="${open.has(r.id)}">
+            <span class="report__sev">${SEV_LABEL[r.severity] || "Minor"}</span>
+            <span class="report__title">${esc(r.title || "Untitled report")}</span>
+            <span class="report__when">${fmtDate(r.created_at)}</span>
+            <span class="report__caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="report__panel">
+            <div class="report__meta"><span>${esc(r.author_name || "Unknown")} · ${fmtDate(r.created_at)}</span><span>T${r.tier}${(d.can.admin || r.author_id === d.can.me) ? ` · <button class="report__del" type="button" data-delreport="${r.id}">remove</button>` : ""}</span></div>
+            <div class="report__body">${esc(r.body)}</div>
+          </div>
+        </article>`).join("");
+      listEl.querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", () => {
+        const id = Number(b.dataset.toggle);
+        const art = b.closest(".report");
+        if (open.has(id)) { open.delete(id); art.classList.remove("is-open"); b.setAttribute("aria-expanded", "false"); }
+        else { open.add(id); art.classList.add("is-open"); b.setAttribute("aria-expanded", "true"); }
+      }));
+      listEl.querySelectorAll("[data-delreport]").forEach((b) => b.addEventListener("click", async () => {
+        if (!confirm("Remove this report?")) return;
+        try { await api("DELETE", `/api/collection/reports/${b.dataset.delreport}`); await openFile(p.id); await load(); } catch (err) { toast(err.message); }
+      }));
+    }
+    const sortSel = $("[data-sort]", el.file);
+    if (d.reports.length) {
+      const remembered = (() => { try { return localStorage.getItem("doc_report_sort") || "newest"; } catch { return "newest"; } })();
+      sortSel.value = remembered;
+      renderReports(remembered);
+      sortSel.addEventListener("change", () => { try { localStorage.setItem("doc_report_sort", sortSel.value); } catch {} renderReports(sortSel.value); });
+    }
     el.nodes.querySelectorAll(".node").forEach((n) => n.classList.toggle("is-selected", Number(n.dataset.id) === id));
   }
 

@@ -145,6 +145,9 @@ async function setup(env) {
   if (!ucols.includes("person_id")) await db.exec("ALTER TABLE users ADD COLUMN person_id INTEGER");
   const pcols = (await db.prepare("PRAGMA table_info(people)").all()).results.map((c) => c.name);
   if (!pcols.includes("division")) await db.exec("ALTER TABLE people ADD COLUMN division TEXT");
+  const rcols = (await db.prepare("PRAGMA table_info(reports)").all()).results.map((c) => c.name);
+  if (!rcols.includes("title")) await db.exec("ALTER TABLE reports ADD COLUMN title TEXT");
+  if (!rcols.includes("severity")) await db.exec("ALTER TABLE reports ADD COLUMN severity TEXT NOT NULL DEFAULT 'minor'");
 
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {
