@@ -1,6 +1,6 @@
 ---
 title: Mandate on Culture
-kicker: Founding instrument · text
+kicker: Founding instrument
 issued: 10 October 1962
 lead: Concerning the Mandate of the Department of Culture, as issued by the Public Advocate. Held in the Department; not released to the public.
 ---

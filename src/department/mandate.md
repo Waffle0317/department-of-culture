@@ -18,7 +18,7 @@ lead: The Department investigates, records and refers. It exercises the power to
 | Staff | Public Curators appointed by the Advocate, serving at his pleasure and answering to him alone; Oath of the Second Surrender; faults judged in heightened degree; conduct supervised by the Office | Hold any other office of the Capital | s.9 |
 | Secrecy | Conduct the whole of its functions in confidence; rolls of Curators and sources kept by the Office alone | Lay the rolls before Council, Governor, any court or any agency; disclose office, investigations, sources or the Collection without leave. A Curator who does is tried and forfeits his office | s.10 |
 
-The full text of the Mandate is held in the Department: [Mandate on Culture (text)](/department/mandate-text/). It is not released to the public.
+The full text is held in the Department: [Mandate on Culture](/department/mandate-text/). It is not released to the public.
 
 ## The Department in the Advocacy
 
@@ -28,7 +28,6 @@ By the Proclamation of 12 October 1962 on the Offices of the Public Advocacy, th
 
 - **Spiritual Penal Law (10 October 1962).** Defines the Public Curator (§10.00), the spiritual offences (Part Three), the modifiers (§65), and the rule that no search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (§200.15).
 - **Mandate on Seditious Terminology (13 October 1962), art. V.** Every public servant must report seditious words, insults or slurs to the Department within two hours. The Department is the intake for the whole city.
-- **Determination under Title 70 regarding Richard Dent (14 October 1962), s.1.** So that nothing bearing on his death is lost, the Department secures the records of the District Attorney's office for his tenure; every officer of that office answers fully when questioned, and none discloses that he was.
 - **The Third Work (10 October 1962), Book Two, Part Ten.** Tells every servant to submit material before release, give Curators access, withdraw withheld works everywhere, and never warn anyone under review. A Curator's request is a request of the Office.
 - **Department of Culture Field Manual.** The Department's own forms and pipeline: Form C-STAMP, C-REVISE and C-BAN for prior review; C-DOSSIER for referral; PA-SPC-01 for the indictment; PA-DA-01 to the District Attorney for a warrant.
 - **Proclamation on the Title of the Security Advocate (23 October 1962).** The Advocate may task the Security Forces with the protection of the Public Curators and the support of the Department in any spiritual inquiry arising from a Title 70 matter.

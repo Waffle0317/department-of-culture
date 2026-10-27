@@ -1,6 +1,6 @@
 ---
 title: Discipline and pitfalls
-kicker: Standing order · V
+kicker: Standing order · IV
 lead: A Curator's fault is judged in its heightened degree. Under §65.10 of the Spiritual Penal Law every offence by a public servant or holder of the Oath is raised one class, so the Department holds itself to a stricter standard than anyone it watches.
 ---
 
@@ -19,7 +19,7 @@ lead: A Curator's fault is judged in its heightened degree. Under §65.10 of the
 
 | Pitfall | Why it matters | Guard |
 | --- | --- | --- |
-| Overreach | The Dent matter shows the Office does not forgive an office acting past its law twice | Every action checked against s.4 and s.8 before it is taken |
+| Overreach | The Office does not forgive an office acting past its law twice | Every action checked against s.4 and s.8 before it is taken |
 | Treating a Collection entry as guilt | s.7 says an entry is not an accusation | Referral needs material and witnesses, not only an entry |
 | Becoming a Heretic | Answering a question of meaning is the fault the Third Work names first in office | Questions of meaning sent to the Director untouched |
 | Becoming a Holdout | Keeping findings from the Office is unlawful reservation of authority (§110) | Everything flows to the Advocate; nothing to anyone else |

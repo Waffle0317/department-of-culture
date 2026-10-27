@@ -10,11 +10,10 @@
     "title": "Standing orders",
     "items": [
       { "label": "Desk", "url": "/department/" },
-      { "label": "Mandate on Culture (text)", "url": "/department/mandate-text/" },
+      { "label": "Mandate on Culture", "url": "/department/mandate-text/" },
       { "label": "Reading of the Mandate", "url": "/department/mandate/" },
       { "label": "Procedures", "url": "/department/procedures/" },
       { "label": "Structure and Desks", "url": "/department/structure/" },
-      { "label": "Coordination", "url": "/department/coordination/" },
       { "label": "Discipline", "url": "/department/discipline/" }
     ]
   },
