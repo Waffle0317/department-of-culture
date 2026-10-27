@@ -2,7 +2,7 @@
 // The Worker creates its own tables on first use, so no migration step is
 // needed in the dashboard. Statements are idempotent.
 
-import { ORGS, RANKS } from "./seed.js";
+import { ORGS, RANKS, OLD_LONG_NAMES } from "./seed.js";
 import { getMembers } from "./auth.js";
 
 const SCHEMA = `
@@ -109,6 +109,12 @@ async function setup(env) {
         .bind(o.slug, o.name, o.long, o.compartment, o.min_tier, o.sort)
     ));
   }
+  // Corrected organization names, applied only where the old seed value is still in place.
+  await db.batch(Object.entries(OLD_LONG_NAMES).map(([slug, old]) =>
+    db.prepare("UPDATE organizations SET long_name = ? WHERE slug = ? AND long_name = ?")
+      .bind(ORGS.find((o) => o.slug === slug).long, slug, old)
+  ));
+
   const rankCount = (await db.prepare("SELECT COUNT(*) AS n FROM ranks").first()).n;
   if (rankCount === 0) {
     const orgs = await db.prepare("SELECT id, slug FROM organizations").all();

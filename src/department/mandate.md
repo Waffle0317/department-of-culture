@@ -23,6 +23,9 @@ lead: The Department may watch, gather, review and refer; it may not arrest, sea
 - **Seditious Terminology Mandate, Art. V.** Every public servant must report seditious words, insults or slurs to the Department within two hours. The Department is the intake for the whole city.
 - **Determination regarding Richard Dent, s.1.** The Department is charged with securing and examining the records of the District Attorney's office for Dent's tenure.
 - **The Third Work, Book Two, Part Ten.** Tells every servant to submit material before release, give Curators access, withdraw withheld works everywhere, and never warn anyone under review.
+- **Mandate of the Court of Public Order (24 October 1962), art. 3.** The Court may investigate, summon, arrest, detain and censor within the Capital. Its process is executed by the Public Curators of the Department and by the Advocate's personal guard, and every organ of the Capital must aid them. Curators act on the Court's process, never on their own authority.
+- **New York Home Rule Act, s.6 and s.5.** The Public Advocate is appointed by the Lord Protector, charged with public morality and spiritual unity, authorized to investigate and adjudicate, and sits on the Council of New York. Every Councillor is a General Officer (Protectorate Act s.4(c)), so files on them are Tier 3.
+- **Constitution, Art. IV(c).** Membership in the Party is required of all civil servants, law enforcement personnel, judicial officers and government employees. A servant not on the Central Membership Registry is a matter for the Collection.
 
 <div class="callout callout--red">
 <span class="label label--red">Amendment II to the Constitution</span>

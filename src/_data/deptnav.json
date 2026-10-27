@@ -6,16 +6,9 @@
     ]
   },
   {
-    "title": "Office",
-    "items": [
-      { "label": "Desk", "url": "/department/" },
-      { "label": "Plan of Office", "url": "/department/plan-of-office/" },
-      { "label": "Three-Step Plan", "url": "/department/three-step-plan/" }
-    ]
-  },
-  {
     "title": "Standing orders",
     "items": [
+      { "label": "Desk", "url": "/department/" },
       { "label": "Reading of the Mandate", "url": "/department/mandate/" },
       { "label": "Procedures", "url": "/department/procedures/" },
       { "label": "Structure and Desks", "url": "/department/structure/" },
@@ -27,8 +20,7 @@
     "title": "Papers",
     "items": [
       { "label": "Forms and Templates", "url": "/department/forms/" },
-      { "label": "Calendar of the Days", "url": "/department/calendar/" },
-      { "label": "Staff Notes (OOC)", "url": "/department/staff-notes/" }
+      { "label": "Calendar of the Days", "url": "/department/calendar/" }
     ]
   },
   {
