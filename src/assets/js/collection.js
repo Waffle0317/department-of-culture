@@ -7,6 +7,8 @@
   const W = 224, H = 86, GAP_X = 36, GAP_Y = 90;
   const STATUS = { watched: "Kept and watched", referred: "Referred", cleared: "Cleared", closed: "Closed", serving: "Serving", probation: "On probation", leave: "On leave", retired: "Retired" };
   const STATUS_CASE = ["watched", "referred", "cleared", "closed"];
+  const DIV_LABEL = { government: "Abt. I Regierung", secret: "Abt. II Schatten", public: "Abt. III Öffentlichkeit" };
+  const DIV_SHORT = { government: "Abt. I", secret: "Abt. II", public: "Abt. III" };
   const STATUS_STAFF = ["serving", "probation", "leave", "retired"];
   const TIER_LABEL = { 1: "Tier 1 · Enlisted / NCO", 2: "Tier 2 · Officers", 3: "Tier 3 · General / Government", 4: "Tier 4 · Office only" };
   const BAND = { head: "Heads of State", general: "General ranks", officer: "Commissioned officers", nco: "Non-commissioned officers", enlisted: "Enlisted and civil" };
@@ -212,7 +214,10 @@
       g.appendChild(mk("text", { class: "node__name", x: 60, y: 24 }, trunc(p.name, 20)));
       g.appendChild(mk("text", { class: "node__rank", x: 60, y: 40 }, trunc(p.rank_name || p.rank_text || "Rank unknown", 30)));
       g.appendChild(mk("text", { class: "node__title", x: 60, y: 56 }, trunc(p.title || "", 34)));
-      const foot = `T${p.tier} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}${p.party_member === 1 ? " · Party" : ""}`;
+      const divs = String(p.division || "").split(",").filter(Boolean).map((d) => DIV_SHORT[d] || d).join("/");
+      const foot = divs
+        ? `${divs} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}`
+        : `T${p.tier} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}${p.party_member === 1 ? " · Party" : ""}`;
       g.appendChild(mk("text", { class: "node__foot", x: 14, y: H - 9 }, foot));
     } else {
       g.appendChild(mk("text", { class: "node__name", x: 14, y: 24 }, trunc(p.name, 24)));
@@ -352,7 +357,7 @@
           <span class="chip chip--ink">${esc(TIER_LABEL[p.tier] || "Tier " + p.tier)}</span>
           <span class="chip">${esc(p.compartment)}</span>
           <span class="chip ${p.status === "referred" ? "chip--red" : ""}">${esc(STATUS[p.status] || p.status)}</span>
-          ${p.access === "open" ? `<span class="chip">Personnel record</span>` : `<span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>`}
+          ${p.access === "open" ? `<span class="chip">Personnel record</span>${String(p.division || "").split(",").filter(Boolean).map((d) => `<span class="chip chip--red">${DIV_LABEL[d] || esc(d)}</span>`).join("") || `<span class="chip chip--muted">No division</span>`}` : `<span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>`}
         </div>
         <dl class="file__dl">
           <dt>Reports to</dt><dd>${d.superior ? stubHtml(d.superior, true) : "—"}</dd>
@@ -445,6 +450,7 @@
     const want = list.includes(current) ? current : list[0];
     el.pfStatus.innerHTML = list.map((s) => `<option value="${s}" ${s === want ? "selected" : ""}>${STATUS[s]}</option>`).join("");
     $("#pfParty").hidden = staff;
+    $("#pfDivisions").hidden = !staff;
     $("#pfTitleLabel").textContent = staff ? "Post · desk · division" : "Title or post";
     $("#pfTitle").placeholder = staff ? "e.g. Oberkurator, Stage desk, Abt. II Schatten" : "e.g. Precinct 9, Night Desk";
     $("#pfInfoLabel").textContent = staff ? "Service record" : "General information";
@@ -518,6 +524,8 @@
       el.form.rank_text.value = person.rank_text || "";
       el.form.title.value = person.title || "";
       if (STATUS[person.status]) el.form.status.value = person.status;
+      const divs = String(person.division || "").split(",");
+      el.form.querySelectorAll("[name=division]").forEach((c) => { c.checked = divs.includes(c.value); });
       el.form.info.value = person.info || "";
       el.form.party_member.value = person.party_member === 1 ? "1" : person.party_member === 0 ? "0" : "";
       el.pfPortraitPreview.hidden = !person.portrait; el.pfPortraitClear.hidden = !person.portrait;
@@ -542,6 +550,7 @@
       name: f.name.value, org_id: Number(f.org_id.value), rank_id: f.rank_id.value ? Number(f.rank_id.value) : null,
       rank_text: f.rank_text.value, title: f.title.value, party_member: f.party_member.value === "" ? null : Number(f.party_member.value),
       status: f.status.value, tier: Number(f.tier.value), reports_to: f.reports_to.value ? Number(f.reports_to.value) : null, info: f.info.value,
+      division: [...f.querySelectorAll("[name=division]:checked")].map((c) => c.value),
     };
     if (state.portrait !== undefined) body.portrait = state.portrait;
     el.pfSave.disabled = true;

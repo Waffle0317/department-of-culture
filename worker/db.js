@@ -124,6 +124,8 @@ async function setup(env) {
   if (!cols.includes("access")) await db.exec("ALTER TABLE organizations ADD COLUMN access TEXT NOT NULL DEFAULT 'tiered'");
   const ucols = (await db.prepare("PRAGMA table_info(users)").all()).results.map((c) => c.name);
   if (!ucols.includes("rank")) await db.exec("ALTER TABLE users ADD COLUMN rank TEXT");
+  const pcols = (await db.prepare("PRAGMA table_info(people)").all()).results.map((c) => c.name);
+  if (!pcols.includes("division")) await db.exec("ALTER TABLE people ADD COLUMN division TEXT");
 
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {
@@ -219,9 +221,26 @@ export function maxTier(user) {
   return Math.max(Number(user.tier_public || 0), Number(user.tier_secret || 0), Number(user.tier_government || 0));
 }
 
+export function divisionsOf(x) {
+  return String((x && x.division) || "").split(",").map((d) => d.trim()).filter(Boolean);
+}
+
 // Is the user placed in Abt. II Schatten? Schatten sees every tree.
 export function inSchatten(user) {
-  return !!user && String(user.division || "").split(",").includes("secret");
+  return divisionsOf(user).includes("secret");
+}
+
+// On an open tab (the Party, the Department's own personnel) a record is
+// read by division, not tier: a Curator sees everyone filed to a division
+// they sit in, whatever the rank. Tier 4 sees all. A record filed to no
+// division is open to every member.
+export function sameDivision(user, person) {
+  if (!user) return false;
+  if (user.tier4) return true;
+  const mine = divisionsOf(user);
+  const theirs = divisionsOf(person);
+  if (!theirs.length) return true;
+  return theirs.some((d) => mine.includes(d));
 }
 
 // How a user sees an organization's tab:
@@ -238,11 +257,12 @@ export function orgAccess(user, org) {
   return null;
 }
 
-// What a user may see of a person filed at `tier` in `org`:
+// What a user may see of a person filed at `tier` in `org`. `person` is the
+// record itself (or anything carrying its `division`), used on open tabs:
 //   "full" | "redacted" (name and rank) | "bare" (nothing) | null (not shown)
-export function personAccess(user, org, tier) {
+export function personAccess(user, org, tier, person) {
   const a = orgAccess(user, org);
-  if (a === "full") return "full";
+  if (a === "full") return sameDivision(user, person || {}) ? "full" : "bare";
   if (a === "tiered") return userTier(user, org.compartment) >= Number(tier) ? "full" : "redacted";
   if (a === "bare") return "bare";
   return null;

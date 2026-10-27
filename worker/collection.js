@@ -6,7 +6,7 @@
 // of the people in compartments the Curator does not hold.
 
 import { json, error } from "./auth.js";
-import { isAdmin, userTier, orgAccess, personAccess } from "./db.js";
+import { isAdmin, userTier, orgAccess, personAccess, sameDivision } from "./db.js";
 
 // Investigative statuses for the Collection; personnel statuses for an open (Party) tab.
 const STATUSES = ["watched", "referred", "closed", "cleared", "serving", "probation", "leave", "retired"];
@@ -39,7 +39,7 @@ async function visiblePerson(env, user, id) {
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.id = ?`).bind(id).first();
   if (!p) return null;
-  return personAccess(user, p, p.tier) === "full" ? p : null;
+  return personAccess(user, p, p.tier, p) === "full" ? p : null;
 }
 
 // Tier a person is filed at: the rank's band sets the floor; the author may raise it.
@@ -83,7 +83,7 @@ export async function listOrgs({ env, user }) {
 
 // What a Curator is told about a person they may not read in full.
 function stubOf(user, e) {
-  const a = personAccess(user, e, e.tier);
+  const a = personAccess(user, e, e.tier, e);
   if (a === "full") {
     const { id, name, title, org_slug, org_name, rank_name } = e;
     return { id, name, title, org_slug, org_name, rank_name };
@@ -102,7 +102,7 @@ export async function listPeople({ env, user, url }) {
   const t = mode === "full" ? 4 : userTier(user, org.compartment);
 
   const rows = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.rank_text, p.party_member, p.status, p.tier, p.reports_to, p.x, p.y,
+    SELECT p.id, p.name, p.title, p.rank_text, p.party_member, p.status, p.tier, p.reports_to, p.x, p.y, p.division,
            p.updated_at, r.name AS rank_name, r.band AS rank_band, r.sort AS rank_sort,
            CASE WHEN p.portrait IS NULL THEN 0 ELSE 1 END AS has_portrait,
            (SELECT COUNT(*) FROM reports rp WHERE rp.person_id = p.id AND rp.tier <= ?) AS report_count
@@ -111,7 +111,7 @@ export async function listPeople({ env, user, url }) {
     ORDER BY COALESCE(r.sort, 999), p.name`).bind(t, org.id).all()).results;
 
   const people = rows.map((p) => {
-    if (mode === "bare") return { id: p.id, redacted: 1, bare: 1, reports_to: p.reports_to, x: p.x, y: p.y, rank_sort: p.rank_sort };
+    if (mode === "bare" || (mode === "full" && !sameDivision(user, p))) return { id: p.id, redacted: 1, bare: 1, reports_to: p.reports_to, x: p.x, y: p.y, rank_sort: p.rank_sort };
     if (p.tier <= t) return p;
     return { id: p.id, name: p.name, rank_name: p.rank_name || p.rank_text || null, rank_sort: p.rank_sort, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
   });
@@ -141,7 +141,7 @@ export async function getPerson({ env, user, params }) {
   const withheld = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t).first()).n;
   const superior = p.reports_to ? await stub(env, user, p.reports_to) : null;
   const subs = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
   const creator = p.created_by ? await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by).first() : null;
@@ -154,7 +154,7 @@ export async function getPerson({ env, user, params }) {
 
 async function stub(env, user, id) {
   const e = await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id WHERE p.id = ?`).bind(id).first();
   return e ? (stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 }) : null;
 }
@@ -180,10 +180,13 @@ async function validatePersonBody(env, body) {
   }
   if (!portraitOk(body.portrait)) return { err: "Portrait must be a JPEG, PNG or WebP under 300 KB" };
   const tier = await computeTier(env, rank_id, body.tier);
+  const DIVS = ["government", "secret", "public"];
+  const divList = Array.isArray(body.division) ? body.division : String(body.division || "").split(",");
+  const division = DIVS.filter((d) => divList.map((x) => String(x).trim().toLowerCase()).includes(d)).join(",") || null;
   return {
     ok: {
       name, org_id: org.id, rank_id, rank_text: s(body.rank_text, 120), title: s(body.title, 160),
-      party_member, status, info: s(body.info, 20000), reports_to, tier,
+      party_member, status, info: s(body.info, 20000), reports_to, tier, division,
       portrait: body.portrait === undefined ? undefined : (body.portrait || null),
     },
   };
@@ -196,9 +199,9 @@ export async function createPerson({ env, user, request }) {
   if (v.err) return error(v.err);
   const d = v.ok;
   const res = await env.DB.prepare(`
-    INSERT INTO people (org_id, rank_id, rank_text, title, name, party_member, status, tier, info, portrait, reports_to, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(d.org_id, d.rank_id, d.rank_text, d.title, d.name, d.party_member, d.status, d.tier, d.info, d.portrait || null, d.reports_to, user.id)
+    INSERT INTO people (org_id, rank_id, rank_text, title, name, party_member, status, tier, info, portrait, reports_to, division, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(d.org_id, d.rank_id, d.rank_text, d.title, d.name, d.party_member, d.status, d.tier, d.info, d.portrait || null, d.reports_to, d.division, user.id)
     .run();
   const id = res.meta.last_row_id;
   const visible = !!(await visiblePerson(env, user, id));
@@ -217,8 +220,8 @@ export async function updatePerson({ env, user, request, params }) {
   const portrait = d.portrait === undefined ? p.portrait : d.portrait;
   await env.DB.prepare(`
     UPDATE people SET org_id = ?, rank_id = ?, rank_text = ?, title = ?, name = ?, party_member = ?, status = ?, tier = ?,
-      info = ?, portrait = ?, reports_to = ?, updated_at = datetime('now') WHERE id = ?`)
-    .bind(d.org_id, d.rank_id, d.rank_text, d.title, d.name, d.party_member, d.status, d.tier, d.info, portrait, d.reports_to, p.id)
+      info = ?, portrait = ?, reports_to = ?, division = ?, updated_at = datetime('now') WHERE id = ?`)
+    .bind(d.org_id, d.rank_id, d.rank_text, d.title, d.name, d.party_member, d.status, d.tier, d.info, portrait, d.reports_to, d.division, p.id)
     .run();
   const visible = !!(await visiblePerson(env, user, p.id));
   return json({ id: p.id, visible });
@@ -247,10 +250,10 @@ export async function search({ env, user, url }) {
   const q = s(url.searchParams.get("q"), 80);
   if (!q) return json({ results: [] });
   const rows = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.name LIKE ? ORDER BY p.name LIMIT 40`).bind(`%${q}%`).all()).results;
-  const results = rows.filter((e) => personAccess(user, e, e.tier) === "full").slice(0, 20)
+  const results = rows.filter((e) => personAccess(user, e, e.tier, e) === "full").slice(0, 20)
     .map(({ id, name, title, org_slug, org_name, rank_name }) => ({ id, name, title, org_slug, org_name, rank_name }));
   return json({ results });
 }

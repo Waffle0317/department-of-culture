@@ -63,6 +63,11 @@ app: true
         <label class="field"><span>Rank</span><select name="rank_id" id="pfRank"><option value="">— none / unknown —</option></select></label>
         <label class="field"><span>Rank as written (if not listed)</span><input name="rank_text" maxlength="120"></label>
         <label class="field"><span id="pfTitleLabel">Title or post</span><input name="title" id="pfTitle" maxlength="160" placeholder="e.g. Precinct 9, Night Desk"></label>
+        <fieldset class="field pf__radio" id="pfDivisions" hidden><span>Division (one or more)</span>
+          <label><input type="checkbox" name="division" value="government"> Abt. I Regierung</label>
+          <label><input type="checkbox" name="division" value="secret"> Abt. II Schatten</label>
+          <label><input type="checkbox" name="division" value="public"> Abt. III Öffentlichkeit</label>
+        </fieldset>
         <fieldset class="field pf__radio" id="pfParty"><span>Party member</span>
           <label><input type="radio" name="party_member" value="1"> Yes</label>
           <label><input type="radio" name="party_member" value="0"> No</label>
