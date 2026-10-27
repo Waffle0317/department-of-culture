@@ -185,9 +185,10 @@
       // A file exists here, but the viewer's clearance does not reach it.
       const h = ext ? 56 : H;
       g.appendChild(mk("rect", { class: "node__hatch", x: 2, y: 2, width: W - 4, height: h - 4 }));
-      g.appendChild(mk("text", { class: "node__confidential", x: W / 2, y: h / 2 + (ext ? 2 : -2) }, "CONFIDENTIAL"));
-      g.appendChild(mk("text", { class: "node__foot node__foot--c", x: W / 2, y: h - (ext ? 8 : 12) }, `Tier ${p.tier} clearance required`));
-      g.appendChild(mk("title", {}, "Confidential. Your clearance does not reach this file."));
+      g.appendChild(mk("text", { class: "node__name node__name--c", x: W / 2, y: ext ? 24 : 28 }, trunc(p.name, 24)));
+      g.appendChild(mk("text", { class: "node__confidential", x: W / 2, y: ext ? 46 : 54 }, "CONFIDENTIAL"));
+      if (!ext) g.appendChild(mk("text", { class: "node__foot node__foot--c", x: W / 2, y: h - 10 }, `Tier ${p.tier} clearance required`));
+      g.appendChild(mk("title", {}, `${p.name}: confidential. Your clearance does not reach this file.`));
       return g;
     }
     if (!ext) {
@@ -336,8 +337,8 @@
           <span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>
         </div>
         <dl class="file__dl">
-          <dt>Reports to</dt><dd>${d.superior ? (d.superior.redacted ? `<span class="chip chip--red">Confidential · Tier ${d.superior.tier}</span>` : `<a href="#" data-open="${d.superior.id}">${esc(d.superior.name)}</a> <span class="muted">· ${esc(d.superior.rank_name || "")} ${esc(d.superior.org_name)}</span>`) : "—"}</dd>
-          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => s.redacted ? `<span class="chip chip--red">Confidential · Tier ${s.tier}</span>` : `<a href="#" data-open="${s.id}">${esc(s.name)}</a>`).join(", ") : "—"}</dd>
+          <dt>Reports to</dt><dd>${d.superior ? (d.superior.redacted ? `${esc(d.superior.name)} <span class="chip chip--red">Confidential · Tier ${d.superior.tier}</span>` : `<a href="#" data-open="${d.superior.id}">${esc(d.superior.name)}</a> <span class="muted">· ${esc(d.superior.rank_name || "")} ${esc(d.superior.org_name)}</span>`) : "—"}</dd>
+          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => s.redacted ? `${esc(s.name)} <span class="chip chip--red">Confidential</span>` : `<a href="#" data-open="${s.id}">${esc(s.name)}</a>`).join(", ") : "—"}</dd>
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
