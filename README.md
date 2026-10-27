@@ -4,8 +4,9 @@ Central website of the Department of Culture, Office of the Public Advocate.
 
 - **Public site** at `/` — built with [Eleventy](https://www.11ty.dev/) from `src/`.
 - **Personnel area** at `/department/` — same static pages, locked by a login
-  that runs as a Cloudflare Pages Function (`functions/`). Members and the
-  session key live in two Cloudflare secrets; there is no database.
+  that runs in a Cloudflare Worker (`worker/`) in front of the static files.
+  Members and the session key live in two Cloudflare secrets; there is no
+  database yet.
 
 ## Working on it
 
@@ -21,16 +22,17 @@ gitignored and never leaves your machine.
 
 ## Deploying
 
-Cloudflare Pages builds from the `main` branch on every push.
+The Cloudflare Worker builds from the `main` branch on every push. Its
+configuration is `wrangler.jsonc`; the dashboard only needs:
 
 | Setting | Value |
 | --- | --- |
 | Build command | `npm run build` |
-| Build output directory | `public` |
-| Node version | from `.node-version` (22) |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/` |
 
-Two secrets must be set under **Settings → Variables and Secrets** for the
-login to work:
+Two secrets must be set under the Worker's **Settings → Variables and
+Secrets** for the login to work:
 
 | Name | Value |
 | --- | --- |
@@ -75,11 +77,9 @@ src/
   _includes/partials/  the emblem (SVG)
   _data/               site facts, department nav
   assets/              css, js, images
-functions/
-  api/login.js         POST: verify member, set session cookie
-  api/logout.js        clear cookie
-  api/me.js            who is signed in
-  department/_middleware.js   gate for /department/*
-  _lib/auth.js         hashing, signing, cookies
+worker/
+  index.js             routes: /api/login, /api/logout, /api/me, gate for /department/*
+  auth.js              hashing, signing, cookies
+wrangler.jsonc         Worker + static assets configuration
 scripts/hash-password.mjs
 ```

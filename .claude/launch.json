@@ -4,7 +4,7 @@
     {
       "name": "preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["wrangler", "pages", "dev", "public", "--port", "8788", "--compatibility-date", "2025-10-01"],
+      "runtimeArgs": ["wrangler", "dev", "--port", "8788"],
       "port": 8788
     }
   ]

@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "department-of-culture",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // The Worker must see these before static assets are served,
+    // so the personnel gate and the API run on every request.
+    "run_worker_first": ["/api/*", "/department", "/department/*"]
+  },
+  "observability": { "enabled": true }
+}

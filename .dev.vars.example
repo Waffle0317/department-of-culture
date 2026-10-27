@@ -1,6 +1,6 @@
-# Local development secrets for `npm run preview` (wrangler pages dev).
-# Copy to .dev.vars (gitignored). On Cloudflare, set the same two as
-# Pages → Settings → Variables and Secrets.
+# Local development secrets for `npm run preview` (wrangler dev).
+# Copy to .dev.vars (gitignored). On Cloudflare, set the same two as Secrets
+# under the Worker's Settings → Variables and Secrets.
 #
 # SESSION_SECRET: any long random string. Changing it signs everyone out.
 # MEMBERS: JSON object of username → { hash, name, role }.
