@@ -11,6 +11,11 @@ Central website of the Department of Culture, Office of the Public Advocate.
     reports. Every record is filed at a tier (1–4, from the subject's rank)
     in a compartment (public, secret, government, from the organization),
     and a Curator only sees what their clearance allows.
+  - **The People's Notes** (`/department/notes/`): everything dropped in
+    **Box 70** (`/box-70/`, the public report form). Any member reads a note;
+    Tier 3 in any compartment may delete one; Tier 4 may restrict one, which
+    shows everyone below Tier 4 a CONFIDENTIAL card instead. Submissions are
+    rate-limited per hashed IP and guarded by a honeypot field.
   - **Admin hub** (`/department/admin/`): the roll of Curators, their
     clearances and passwords, and which compartment each organization is in.
 - **Database**: Cloudflare D1 (`wrangler.jsonc` → `d1_databases`). The Worker

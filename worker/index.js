@@ -11,6 +11,7 @@ import {
 import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier } from "./db.js";
 import * as col from "./collection.js";
 import * as adm from "./admin.js";
+import * as notes from "./notes.js";
 
 // A throwaway hash so a failed lookup costs the same time as a failed password.
 const DECOY = "pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -35,6 +36,12 @@ const ROUTES = [
   ["PUT",    /^\/api\/collection\/people\/(\d+)\/position$/,  col.setPosition,  "user"],
   ["POST",   /^\/api\/collection\/people\/(\d+)\/reports$/,   col.addReport,    "user"],
   ["DELETE", /^\/api\/collection\/reports\/(\d+)$/,           col.deleteReport, "user"],
+
+  ["POST",   /^\/api\/box70$/,                                box70,            "public"],
+  ["GET",    /^\/api\/notes$/,                                notes.list,       "user"],
+  ["POST",   /^\/api\/notes\/(\d+)\/restrict$/,               notes.restrict,   "user"],
+  ["POST",   /^\/api\/notes\/(\d+)\/unrestrict$/,             notes.unrestrict, "user"],
+  ["DELETE", /^\/api\/notes\/(\d+)$/,                         notes.remove,     "user"],
 
   ["GET",    /^\/api\/admin\/users$/,                         adm.listUsers,    "admin"],
   ["POST",   /^\/api\/admin\/users$/,                         adm.createUser,   "admin"],
@@ -105,6 +112,12 @@ async function login({ request, env }) {
 
 function logout() {
   return redirect("/", { "Set-Cookie": clearCookie() });
+}
+
+async function box70(ctx) {
+  if (!ctx.env.DB) return redirect("/box-70/?error=down");
+  await ensureSchema(ctx.env);
+  return notes.submit(ctx);
 }
 
 // Health of the installation, without revealing anything secret.

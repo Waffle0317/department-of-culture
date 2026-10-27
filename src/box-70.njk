@@ -1,0 +1,48 @@
+---
+layout: layouts/public.njk
+title: Box 70
+description: Drop a report in Box 70, City Hall Station. Your name is known to the Office alone.
+permalink: /box-70/
+---
+<section class="box70">
+  <div class="box70__inner">
+    <div class="box70__side">
+      <div class="label label--red">Written reports</div>
+      <h1 class="box70__title">Box<br><em>70</em></h1>
+      <div class="box70__addr typewriter">Department of Culture<br>{{ site.box }}<br>{{ site.city }}</div>
+      <div class="bars box70__bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="box70__main">
+      <div class="box70__sent" data-box70-sent hidden>
+        <div class="stamp stamp--lg">Received<small>Department of Culture</small></div>
+        <h2 class="box70__h2">Your note is in the box.</h2>
+        <p>It will be read by a Curator. Your name, if you gave it, is known to this Office alone. Say nothing to anyone of what you reported, and do not warn anyone concerned in it.</p>
+        <p><a class="btn btn--ghost" href="/">Return</a></p>
+      </div>
+
+      <div data-box70-form>
+        <p class="box70__lead">Any person may give information to this Office in confidence. What you drop here goes to the Department of Culture and to no one else. A good-faith report carries no penalty, and words repeated here for the purpose of a report are no offence.</p>
+        <div class="login__error" data-box70-error hidden></div>
+        <form method="post" action="/api/box70" autocomplete="off" class="box70__form">
+          <label class="field"><span>What was seen or heard <b class="red">*</b></span><textarea name="body" rows="7" required minlength="10" maxlength="6000" placeholder="The words as spoken, the work as shown, the thing as done. Plainly."></textarea></label>
+          <div class="box70__grid">
+            <label class="field"><span>Who</span><input type="text" name="subject" maxlength="300" placeholder="Name, rank, office, or a description"></label>
+            <label class="field"><span>When</span><input type="text" name="when" maxlength="300" placeholder="Date and hour"></label>
+            <label class="field"><span>Where</span><input type="text" name="where" maxlength="300" placeholder="Street, hall, precinct, page"></label>
+            <label class="field"><span>Who else heard or saw</span><input type="text" name="witnesses" maxlength="300"></label>
+          </div>
+          <div class="box70__grid">
+            <label class="field"><span>Your name <span class="muted">(optional)</span></span><input type="text" name="name" maxlength="300"></label>
+            <label class="field"><span>How the Office may reach you <span class="muted">(optional)</span></span><input type="text" name="contact" maxlength="300"></label>
+          </div>
+          <div class="box70__hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+          <div class="box70__foot">
+            <span class="typewriter muted">Your name is known to this Office alone.</span>
+            <button class="btn btn--red" type="submit">Drop it in Box 70</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

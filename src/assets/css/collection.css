@@ -152,6 +152,24 @@
 .adm__table .mono { font-family: var(--mono); font-size: .85rem; }
 .adm__table .actions { white-space: nowrap; display: flex; gap: 6px; }
 
+/* ----- the people's notes ------------------------------------------------ */
+.notes .adm__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.notes__count { color: var(--ink-2); }
+.notes__rules { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 22px; }
+.notes__list { display: grid; gap: 16px; }
+.note { background: #f6f1e4; border: 2px solid var(--ink); padding: 18px 22px; box-shadow: 6px 6px 0 var(--paper-3); }
+.note__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; border-bottom: 1px solid var(--rule); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.note__body { white-space: pre-wrap; font-size: 1.08rem; line-height: 1.55; }
+.note__dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 20px; margin: 14px 0 0; border-top: 1px dotted var(--rule); padding-top: 12px; }
+.note__field dt { font: 500 .66rem var(--condensed); text-transform: uppercase; letter-spacing: .16em; color: var(--ink-2); }
+.note__field dd { margin: 2px 0 0; font-size: .98rem; }
+.note__actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+.note--marked { border-color: var(--red); }
+.note__banner { background: var(--red); color: var(--paper); padding: 6px 10px; font: 500 .7rem var(--condensed); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 12px; }
+.note--restricted { border-color: var(--red); background: var(--paper-3) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><path d='M0 8L8 0' stroke='%23c9372c' stroke-opacity='.25' stroke-width='3'/></svg>"); text-align: center; padding: 28px 22px; }
+.note__confidential { font: 700 2rem var(--display); text-transform: uppercase; letter-spacing: .16em; color: var(--red); margin: 10px 0 4px; }
+.note__sub { color: var(--ink-2); font-size: .82rem; }
+
 @media (max-width: 900px) {
   .col__body.has-file { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
   .col__file { border-left: 0; border-top: 2px solid var(--ink); max-height: 55vh; }

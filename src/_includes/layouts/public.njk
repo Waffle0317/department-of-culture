@@ -17,6 +17,7 @@ bodyClass: public
       <a href="/#advocate">The Advocate</a>
       <a href="/proclamations/" {% if page.url == "/proclamations/" %}aria-current="page"{% endif %}>Proclamations</a>
       <a href="/#duty">Your Duty</a>
+      <a href="/box-70/" {% if page.url == "/box-70/" %}aria-current="page"{% endif %}>Box 70</a>
       <a class="nav__personnel" href="/login/">Personnel</a>
     </nav>
   </div>
@@ -38,7 +39,7 @@ bodyClass: public
     </div>
     <div class="footer__col">
       <div class="label">Reports</div>
-      <p class="footer__small">Seditious words, insults or slurs heard by any public servant are reported to the Department within two hours.<br>Written reports: {{ site.box }}.</p>
+      <p class="footer__small">Seditious words, insults or slurs heard by any public servant are reported to the Department within two hours.<br>Written reports: <a href="/box-70/">{{ site.box }}</a>.</p>
     </div>
     <div class="footer__col">
       <div class="label">Authority</div>

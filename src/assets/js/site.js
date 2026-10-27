@@ -32,6 +32,23 @@
       .catch(function () {});
   }
 
+  // Box 70: show the receipt or an error after a drop.
+  var b70 = document.querySelector("[data-box70-form]");
+  if (b70) {
+    var q = new URLSearchParams(location.search);
+    if (q.get("sent")) {
+      b70.hidden = true;
+      document.querySelector("[data-box70-sent]").hidden = false;
+    } else if (q.get("error")) {
+      var e = document.querySelector("[data-box70-error]");
+      e.hidden = false;
+      e.textContent =
+        q.get("error") === "short" ? "Say what was seen or heard. A note needs at least a sentence."
+        : q.get("error") === "rate" ? "The box is full for now. Try again in a few minutes."
+        : "The box could not be reached. Try again shortly.";
+    }
+  }
+
   // Department shell: name the signed-in Curator, show clearance, reveal admin links.
   var who = document.querySelector("[data-user]");
   if (who) {

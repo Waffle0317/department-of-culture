@@ -69,6 +69,22 @@ CREATE TABLE IF NOT EXISTS reports (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS reports_person ON reports(person_id);
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  body TEXT NOT NULL,
+  subject TEXT,
+  when_text TEXT,
+  where_text TEXT,
+  witnesses TEXT,
+  reporter_name TEXT,
+  reporter_contact TEXT,
+  ip_hash TEXT,
+  restricted INTEGER NOT NULL DEFAULT 0,
+  restricted_by INTEGER REFERENCES users(id),
+  restricted_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS notes_created ON notes(created_at);
 `;
 
 let ready = null;
@@ -160,6 +176,13 @@ export function userTier(user, compartment) {
   if (!user) return 0;
   if (user.tier4) return 4;
   return Number(user["tier_" + compartment] || 0);
+}
+
+// The highest tier a user holds in any compartment (4 for Tier 4).
+export function maxTier(user) {
+  if (!user) return 0;
+  if (user.tier4) return 4;
+  return Math.max(Number(user.tier_public || 0), Number(user.tier_secret || 0), Number(user.tier_government || 0));
 }
 
 // Can this user see a record filed at `tier` in `compartment`, in an
