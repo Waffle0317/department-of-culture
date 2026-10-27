@@ -86,7 +86,7 @@ const R = [
 
   // The Party tab holds the Department's own personnel records, so its ranks
   // are the Department's internal ranks and nothing else.
-  ["party", "head",     ["Kulturdirektor"]],
+  ["party", "head",     ["Public Advocate", "Kulturdirektor"]],
   ["party", "general",  ["Abteilungsleiter"]],
   ["party", "officer",  ["Oberkurator"]],
   ["party", "nco",      ["Kurator"]],
@@ -97,7 +97,7 @@ const R = [
 
 // The Department's internal ranks, highest first: used on the roll of users
 // (visual only) and as the Party tab's rank list.
-export const DEPT_RANKS = ["Kulturdirektor", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
+export const DEPT_RANKS = ["Public Advocate", "Kulturdirektor", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
 
 export const RANKS = [];
 for (const [org, band, names] of R) {
