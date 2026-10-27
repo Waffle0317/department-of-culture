@@ -11,5 +11,12 @@
     // so the personnel gate and the API run on every request.
     "run_worker_first": ["/api/*", "/department", "/department/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "department-of-culture",
+      "database_id": "265dbf69-ed82-47e6-934e-82c2a983e347"
+    }
+  ],
   "observability": { "enabled": true }
 }

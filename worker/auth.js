@@ -1,11 +1,11 @@
-// Shared helpers for the personnel login.
-// Members live in the MEMBERS secret as JSON:
-//   { "username": "pbkdf2$...",                                  // hash only
-//     "another":  { "hash": "pbkdf2$...", "name": "…", "role": "…" } }
-// Sessions are HMAC-signed cookies keyed by SESSION_SECRET.
+// Passwords, sessions and cookies.
+// Members now live in the database; the MEMBERS secret is read once, on
+// first run, to create the first admin accounts. Sessions are HMAC-signed
+// cookies keyed by SESSION_SECRET.
 
 export const COOKIE = "doc_session";
 const SESSION_HOURS = 12;
+const PBKDF2_ITERATIONS = 100000;
 const enc = new TextEncoder();
 
 export function getMembers(env) {
@@ -23,7 +23,7 @@ export function getMembers(env) {
   }
 }
 
-/* ---------- password hashing (PBKDF2-SHA256) ---------- */
+/* ---------- base64url ---------- */
 
 function b64ToBytes(s) {
   const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
@@ -43,19 +43,27 @@ function equal(a, b) {
   return d === 0;
 }
 
+/* ---------- password hashing (PBKDF2-SHA256) ---------- */
+
+async function derive(password, salt, iterations, length) {
+  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, length * 8);
+  return new Uint8Array(bits);
+}
+
+export async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const out = await derive(password, salt, PBKDF2_ITERATIONS, 32);
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToB64url(salt)}$${bytesToB64url(out)}`;
+}
+
 export async function verifyPassword(password, stored) {
   try {
     const [scheme, iter, saltB64, hashB64] = String(stored).split("$");
     if (scheme !== "pbkdf2") return false;
-    const salt = b64ToBytes(saltB64);
     const expected = b64ToBytes(hashB64);
-    const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-    const bits = await crypto.subtle.deriveBits(
-      { name: "PBKDF2", hash: "SHA-256", salt, iterations: Number(iter) },
-      key,
-      expected.length * 8
-    );
-    return equal(new Uint8Array(bits), expected);
+    const out = await derive(password, b64ToBytes(saltB64), Number(iter), expected.length);
+    return equal(out, expected);
   } catch {
     return false;
   }
@@ -67,8 +75,8 @@ async function hmacKey(secret) {
   return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 
-export async function createSession(member, username, secret) {
-  const payload = { u: username, n: member.name, r: member.role, exp: Date.now() + SESSION_HOURS * 3600 * 1000 };
+export async function createSession(user, secret) {
+  const payload = { id: user.id, u: user.username, exp: Date.now() + SESSION_HOURS * 3600 * 1000 };
   const body = bytesToB64url(enc.encode(JSON.stringify(payload)));
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(secret), enc.encode(body)));
   return `${body}.${bytesToB64url(sig)}`;
@@ -93,8 +101,7 @@ export async function readSession(request, secret) {
 }
 
 export function sessionCookie(token) {
-  const maxAge = SESSION_HOURS * 3600;
-  return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+  return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_HOURS * 3600}`;
 }
 export function clearCookie() {
   return `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
@@ -118,4 +125,12 @@ export function safeNext(value, fallback = "/department/") {
 
 export function redirect(url, headers = {}) {
   return new Response(null, { status: 303, headers: { Location: url, "Cache-Control": "no-store", ...headers } });
+}
+
+export function json(data, status = 200, headers = {}) {
+  return Response.json(data, { status, headers: { "Cache-Control": "no-store", ...headers } });
+}
+
+export function error(message, status = 400) {
+  return json({ error: message }, status);
 }

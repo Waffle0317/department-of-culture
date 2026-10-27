@@ -4,7 +4,7 @@ bodyClass: dept
 noindex: true
 ---
 <a class="skip" href="#main">Skip to content</a>
-<div class="dept__shell">
+<div class="dept__shell{% if app %} dept__shell--app{% endif %}">
   <aside class="dept__side">
     <a class="dept__brand" href="/department/">
       {% include "partials/emblem.njk" %}
@@ -15,7 +15,7 @@ noindex: true
     </a>
     <nav class="dept__nav" aria-label="Department documents">
       {% for group in deptnav %}
-      <div class="dept__group">
+      <div class="dept__group"{% if group.admin %} data-admin-only hidden{% endif %}>
         <div class="dept__group-title">{{ group.title }}</div>
         {% for item in group.items %}
         <a href="{{ item.url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.label }}</a>
@@ -25,6 +25,7 @@ noindex: true
     </nav>
     <div class="dept__side-foot">
       <div class="dept__user" data-user>Curator</div>
+      <div class="dept__clearance typewriter" data-clearance></div>
       <form method="post" action="/api/logout"><button class="btn btn--ghost btn--sm" type="submit">Sign out</button></form>
       <a class="dept__public" href="/">← Public site</a>
     </div>
@@ -37,6 +38,11 @@ noindex: true
       </div>
       <div class="dept__top-right typewriter">Held for the Office · s.10 Secrecy</div>
     </header>
+    {% if app %}
+    <main id="main" class="dept__app">
+      {{ content | safe }}
+    </main>
+    {% else %}
     <main id="main" class="doc">
       <header class="doc__head">
         {% if kicker %}<div class="doc__kicker">{{ kicker }}</div>{% endif %}
@@ -49,5 +55,6 @@ noindex: true
         Signed and held in the name and office of the Department. Not to be disclosed to Council, Governor, courts or any other agency without the leave of the Office (Mandate s.10).
       </footer>
     </main>
+    {% endif %}
   </div>
 </div>

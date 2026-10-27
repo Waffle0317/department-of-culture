@@ -15,13 +15,24 @@
     if (next && p.get("next")) next.value = p.get("next");
   }
 
-  // Department shell: name the signed-in Curator.
+  // Department shell: name the signed-in Curator, show clearance, reveal admin links.
   var who = document.querySelector("[data-user]");
   if (who) {
     fetch("/api/me", { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        if (d && d.name) who.textContent = d.role ? d.role + " · " + d.name : d.name;
+        if (!d || !d.name) return;
+        who.textContent = d.role ? d.role + " · " + d.name : d.name;
+        window.DOC_ME = d;
+        var cl = document.querySelector("[data-clearance]");
+        if (cl) {
+          cl.textContent = d.tier4
+            ? "Clearance: Tier 4 · all compartments"
+            : "Clearance: P" + d.tiers.public + " · S" + d.tiers.secret + " · G" + d.tiers.government;
+        }
+        if (d.admin) {
+          document.querySelectorAll("[data-admin-only]").forEach(function (el) { el.hidden = false; });
+        }
       })
       .catch(function () {});
   }

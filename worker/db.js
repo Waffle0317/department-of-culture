@@ -1,0 +1,162 @@
+// Database schema, first-run setup and the clearance rule.
+// The Worker creates its own tables on first use, so no migration step is
+// needed in the dashboard. Statements are idempotent.
+
+import { ORGS, RANKS } from "./seed.js";
+import { getMembers } from "./auth.js";
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member',
+  division TEXT NOT NULL DEFAULT 'public',
+  tier_public INTEGER NOT NULL DEFAULT 1,
+  tier_secret INTEGER NOT NULL DEFAULT 0,
+  tier_government INTEGER NOT NULL DEFAULT 0,
+  tier4 INTEGER NOT NULL DEFAULT 0,
+  pass_hash TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS organizations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  long_name TEXT,
+  compartment TEXT NOT NULL DEFAULT 'public',
+  min_tier INTEGER NOT NULL DEFAULT 1,
+  sort INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS ranks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_id INTEGER NOT NULL REFERENCES organizations(id),
+  name TEXT NOT NULL,
+  band TEXT NOT NULL,
+  tier INTEGER NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(org_id, name)
+);
+CREATE TABLE IF NOT EXISTS people (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_id INTEGER NOT NULL REFERENCES organizations(id),
+  rank_id INTEGER REFERENCES ranks(id),
+  rank_text TEXT,
+  title TEXT,
+  name TEXT NOT NULL,
+  party_member INTEGER,
+  status TEXT NOT NULL DEFAULT 'watched',
+  tier INTEGER NOT NULL DEFAULT 1,
+  info TEXT,
+  portrait TEXT,
+  reports_to INTEGER REFERENCES people(id) ON DELETE SET NULL,
+  x REAL,
+  y REAL,
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS people_org ON people(org_id);
+CREATE INDEX IF NOT EXISTS people_sup ON people(reports_to);
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+  author_id INTEGER REFERENCES users(id),
+  tier INTEGER NOT NULL DEFAULT 1,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS reports_person ON reports(person_id);
+`;
+
+let ready = null;
+
+export function ensureSchema(env) {
+  if (!ready) ready = setup(env).catch((e) => { ready = null; throw e; });
+  return ready;
+}
+
+async function setup(env) {
+  const db = env.DB;
+  await db.exec(SCHEMA.replace(/\n\s*/g, " ").replace(/;\s*/g, ";\n"));
+
+  const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
+  if (orgCount === 0) {
+    await db.batch(ORGS.map((o) =>
+      db.prepare("INSERT INTO organizations (slug, name, long_name, compartment, min_tier, sort) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(o.slug, o.name, o.long, o.compartment, o.min_tier, o.sort)
+    ));
+  }
+  const rankCount = (await db.prepare("SELECT COUNT(*) AS n FROM ranks").first()).n;
+  if (rankCount === 0) {
+    const orgs = await db.prepare("SELECT id, slug FROM organizations").all();
+    const byslug = Object.fromEntries(orgs.results.map((o) => [o.slug, o.id]));
+    const rows = RANKS.filter((r) => byslug[r.org]);
+    for (let i = 0; i < rows.length; i += 50) {
+      await db.batch(rows.slice(i, i + 50).map((r) =>
+        db.prepare("INSERT OR IGNORE INTO ranks (org_id, name, band, tier, sort) VALUES (?, ?, ?, ?, ?)")
+          .bind(byslug[r.org], r.name, r.band, r.tier, r.sort)
+      ));
+    }
+  }
+
+  // First run: the roll in the MEMBERS secret becomes the first admins.
+  const userCount = (await db.prepare("SELECT COUNT(*) AS n FROM users").first()).n;
+  if (userCount === 0) {
+    const members = getMembers(env) || {};
+    const stmts = Object.entries(members).map(([username, m]) =>
+      db.prepare("INSERT OR IGNORE INTO users (username, name, role, division, tier_public, tier_secret, tier_government, tier4, pass_hash) VALUES (?, ?, 'admin', 'government', 3, 3, 3, 1, ?)")
+        .bind(username, m.name || username, m.hash)
+    );
+    if (stmts.length) await db.batch(stmts);
+  }
+}
+
+/* ---------- users ---------- */
+
+export const USER_COLS = "id, username, name, role, division, tier_public, tier_secret, tier_government, tier4, active, created_at";
+
+export async function loadUser(env, session) {
+  if (!session || !session.id) return null;
+  const u = await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ? AND active = 1`).bind(session.id).first();
+  return u || null;
+}
+
+export function isAdmin(user) {
+  return !!user && user.role === "admin";
+}
+
+/* ---------- clearance ---------- */
+
+export function userTier(user, compartment) {
+  if (!user) return 0;
+  if (user.tier4) return 4;
+  return Number(user["tier_" + compartment] || 0);
+}
+
+// Can this user see a record filed at `tier` in `compartment`, in an
+// organization with `min_tier`? Tiers nest: a higher tier sees lower ones.
+export function canSee(user, compartment, tier, min_tier = 1) {
+  const t = userTier(user, compartment);
+  return t >= Number(tier) && t >= Number(min_tier);
+}
+
+// The SQL fragment that applies the same rule in a query. Expects the
+// query to join organizations AS o and select from people AS p (or reports AS r).
+export function visibilityClause(user, tierExpr = "p.tier") {
+  if (user.tier4) return { sql: "1 = 1", binds: [] };
+  return {
+    sql: `(
+      (o.compartment = 'public'     AND ? >= ${tierExpr} AND ? >= o.min_tier) OR
+      (o.compartment = 'secret'     AND ? >= ${tierExpr} AND ? >= o.min_tier) OR
+      (o.compartment = 'government' AND ? >= ${tierExpr} AND ? >= o.min_tier)
+    )`,
+    binds: [
+      user.tier_public, user.tier_public,
+      user.tier_secret, user.tier_secret,
+      user.tier_government, user.tier_government,
+    ],
+  };
+}

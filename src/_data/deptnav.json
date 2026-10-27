@@ -1,5 +1,11 @@
 [
   {
+    "title": "The Collection",
+    "items": [
+      { "label": "Dossiers and hierarchies", "url": "/department/collection/" }
+    ]
+  },
+  {
     "title": "Office",
     "items": [
       { "label": "Desk", "url": "/department/" },
@@ -23,6 +29,13 @@
       { "label": "Forms and Templates", "url": "/department/forms/" },
       { "label": "Calendar of the Days", "url": "/department/calendar/" },
       { "label": "Staff Notes (OOC)", "url": "/department/staff-notes/" }
+    ]
+  },
+  {
+    "title": "Administration",
+    "admin": true,
+    "items": [
+      { "label": "Admin hub", "url": "/department/admin/" }
     ]
   }
 ]

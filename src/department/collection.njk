@@ -1,0 +1,104 @@
+---
+title: The Collection
+section: Collection
+app: true
+---
+<link rel="stylesheet" href="/assets/css/collection.css">
+<div class="col" id="col">
+  <header class="col__bar">
+    <nav class="col__tabs" id="tabs" aria-label="Organizations"></nav>
+    <div class="col__tools">
+      <input class="col__search" id="search" type="search" placeholder="Find a name…" autocomplete="off" aria-label="Find a name">
+      <button class="btn btn--ghost btn--sm" id="fit" type="button" title="Fit the chart to the window">Fit</button>
+      <button class="btn btn--ghost btn--sm" id="arrange" type="button" title="Arrange this organization top-down by who reports to whom">Arrange</button>
+      <button class="btn btn--red btn--sm" id="new" type="button">+ New file</button>
+    </div>
+  </header>
+
+  <div class="col__body">
+    <div class="col__stage" id="stage">
+      <svg class="col__chart" id="chart" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M40 0H0V40" fill="none" stroke="rgba(22,19,16,.08)" stroke-width="1"/>
+          </pattern>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0 0L10 5L0 10z" fill="#161310"/>
+          </marker>
+        </defs>
+        <rect class="col__grid" width="100%" height="100%" fill="url(#grid)"/>
+        <g id="view">
+          <g id="links"></g>
+          <g id="nodes"></g>
+        </g>
+      </svg>
+      <div class="col__empty" id="empty" hidden>
+        <div class="label label--red">Nothing on file</div>
+        <p>No one in this organization is on the Collection at your clearance. Open a new file to begin.</p>
+      </div>
+      <div class="col__legend">
+        <span><i class="t1"></i>Tier 1 · Enlisted, NCO</span>
+        <span><i class="t2"></i>Tier 2 · Officers</span>
+        <span><i class="t3"></i>Tier 3 · General, Government</span>
+        <span><i class="t4"></i>Tier 4 · Office only</span>
+        <span class="col__hint">Drag to move · wheel to zoom · click a name to open the file</span>
+      </div>
+    </div>
+
+    <aside class="col__file" id="file" hidden aria-live="polite"></aside>
+  </div>
+
+  <dialog class="col__dialog" id="dialog">
+    <form method="dialog" id="personForm" class="pf">
+      <header class="pf__head">
+        <div class="label label--red" id="pfKicker">New file</div>
+        <h2 class="pf__title" id="pfTitle">Open a file</h2>
+      </header>
+      <div class="pf__grid">
+        <label class="field pf__span2"><span>Name</span><input name="name" required maxlength="120"></label>
+        <label class="field"><span>Organization</span><select name="org_id" id="pfOrg" required></select></label>
+        <label class="field"><span>Rank</span><select name="rank_id" id="pfRank"><option value="">— none / unknown —</option></select></label>
+        <label class="field"><span>Rank as written (if not listed)</span><input name="rank_text" maxlength="120"></label>
+        <label class="field"><span>Title or post</span><input name="title" maxlength="160" placeholder="e.g. Precinct 9, Night Desk"></label>
+        <fieldset class="field pf__radio"><span>Party member</span>
+          <label><input type="radio" name="party_member" value="1"> Yes</label>
+          <label><input type="radio" name="party_member" value="0"> No</label>
+          <label><input type="radio" name="party_member" value="" checked> Unknown</label>
+        </fieldset>
+        <label class="field"><span>Status</span>
+          <select name="status">
+            <option value="watched">Kept and watched</option>
+            <option value="referred">Referred</option>
+            <option value="cleared">Cleared</option>
+            <option value="closed">Closed</option>
+          </select>
+        </label>
+        <label class="field"><span>Filed at tier</span><select name="tier" id="pfTier"></select></label>
+        <div class="field pf__span2">
+          <span>Reports to</span>
+          <div class="pf__sup" id="pfSup">
+            <input type="hidden" name="reports_to" id="pfSupId">
+            <div class="pf__supchip" id="pfSupChip" hidden><b id="pfSupName"></b><button type="button" class="pf__x" id="pfSupClear" aria-label="Clear superior">×</button></div>
+            <input type="search" id="pfSupSearch" placeholder="Search any organization by name…" autocomplete="off">
+            <div class="pf__results" id="pfSupResults" hidden></div>
+          </div>
+        </div>
+        <label class="field pf__span2"><span>General information</span><textarea name="info" rows="6" maxlength="20000" placeholder="Where seen, with whom, what said, what read. Entries record; they never accuse."></textarea></label>
+        <div class="field pf__span2">
+          <span>Portrait</span>
+          <div class="pf__portrait">
+            <img id="pfPortraitPreview" alt="" hidden>
+            <input type="file" id="pfPortraitFile" accept="image/*">
+            <button type="button" class="btn btn--ghost btn--sm" id="pfPortraitClear" hidden>Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="pf__error" id="pfError" hidden></div>
+      <footer class="pf__foot">
+        <button type="button" class="btn btn--ghost" id="pfCancel">Cancel</button>
+        <button type="submit" class="btn btn--red" id="pfSave">Enter in the Collection</button>
+      </footer>
+    </form>
+  </dialog>
+</div>
+<script src="/assets/js/collection.js" defer></script>

@@ -36,3 +36,15 @@ The head of the Department keeps three things personally: the Collection, the ro
 | Curator | — | Public Bodies and Observances | — |
 
 <p class="muted">The roll is kept here in outline only. Names of sources never appear on it.</p>
+
+## Divisions of the Department
+
+Every Curator sits in one of three divisions, and every file on the Collection is read under one of the same three compartments. A Curator's clearance is set per compartment by the Director in the admin hub.
+
+| Division | Holds files on | Organizations |
+| --- | --- | --- |
+| Public | The open life of the Capital | NYPD, civilians |
+| Secret | The security services and the National Guard | VSK, NSB, ABI, 1st Military Police, 11th Division, 91st Air Division |
+| Government | The Governor's office, the civil service and the Party | Government; the Party (Tier 4 only) |
+
+Within a division, Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government, and Tier 4 reads everything in every compartment.

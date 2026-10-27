@@ -1,0 +1,76 @@
+---
+title: Admin hub
+section: Administration
+app: true
+---
+<link rel="stylesheet" href="/assets/css/collection.css">
+<div class="adm" id="adm">
+  <header class="adm__head">
+    <div>
+      <div class="label label--red">Administration</div>
+      <h1 class="adm__title">Admin hub</h1>
+      <p class="adm__lead">The roll of personnel and their clearances, and how each organization on the Collection is compartmented. Changes take effect at once.</p>
+    </div>
+  </header>
+
+  <section class="adm__section">
+    <div class="adm__sechead">
+      <h2>Personnel roll</h2>
+      <button class="btn btn--red btn--sm" id="addUser" type="button">+ Add to the roll</button>
+    </div>
+    <div class="adm__explain">
+      <p><b>Tiers nest.</b> Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government. Each is set per compartment, so a Curator can hold Tier 3 in Public and nothing in Secret. <b>Tier 4</b> reads everything in every compartment, including the Party tab.</p>
+      <p><b>Division</b> is where the Curator sits in the Department. <b>Admin</b> may edit any file, delete, and use this hub.</p>
+    </div>
+    <div class="adm__tablewrap">
+      <table class="adm__table" id="usersTable">
+        <thead><tr>
+          <th>Username</th><th>Name</th><th>Role</th><th>Division</th>
+          <th>Public</th><th>Secret</th><th>Government</th><th>Tier 4</th><th>Active</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="adm__section">
+    <div class="adm__sechead"><h2>Organizations and compartments</h2></div>
+    <div class="adm__explain">
+      <p>Every file is read under its organization's compartment, so moving an organization here re-files everyone in it at once. <b>Minimum tier</b> hides the whole tab below that tier (the Party tab is Tier 4 only).</p>
+    </div>
+    <div class="adm__tablewrap">
+      <table class="adm__table" id="orgsTable">
+        <thead><tr><th>Organization</th><th>Full name</th><th>Compartment</th><th>Minimum tier</th><th>Files</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="adm__toast" id="toast" hidden></div>
+
+  <dialog class="col__dialog" id="userDialog">
+    <form method="dialog" id="userForm" class="pf">
+      <header class="pf__head">
+        <div class="label label--red">Personnel roll</div>
+        <h2 class="pf__title">Add to the roll</h2>
+      </header>
+      <div class="pf__grid">
+        <label class="field"><span>Username (for signing in)</span><input name="username" required pattern="[a-zA-Z0-9._-]{2,40}" autocapitalize="off"></label>
+        <label class="field"><span>Display name</span><input name="name" required maxlength="80"></label>
+        <label class="field"><span>Password</span><input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
+        <label class="field"><span>Role</span><select name="role"><option value="member">Curator</option><option value="admin">Admin</option></select></label>
+        <label class="field"><span>Division</span><select name="division"><option value="public">Public</option><option value="secret">Secret</option><option value="government">Government</option></select></label>
+        <label class="field"><span>Tier 4 (everything)</span><select name="tier4"><option value="0">No</option><option value="1">Yes</option></select></label>
+        <label class="field"><span>Public tier</span><select name="tier_public"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label>
+        <label class="field"><span>Secret tier</span><select name="tier_secret"><option selected>0</option><option>1</option><option>2</option><option>3</option></select></label>
+        <label class="field"><span>Government tier</span><select name="tier_government"><option selected>0</option><option>1</option><option>2</option><option>3</option></select></label>
+      </div>
+      <div class="pf__error" id="userError" hidden></div>
+      <footer class="pf__foot">
+        <button type="button" class="btn btn--ghost" id="userCancel">Cancel</button>
+        <button type="submit" class="btn btn--red">Add</button>
+      </footer>
+    </form>
+  </dialog>
+</div>
+<script src="/assets/js/admin.js" defer></script>

@@ -3,10 +3,20 @@
 Central website of the Department of Culture, Office of the Public Advocate.
 
 - **Public site** at `/` — built with [Eleventy](https://www.11ty.dev/) from `src/`.
-- **Personnel area** at `/department/` — same static pages, locked by a login
-  that runs in a Cloudflare Worker (`worker/`) in front of the static files.
-  Members and the session key live in two Cloudflare secrets; there is no
-  database yet.
+- **Personnel area** at `/department/` — static documents plus two
+  applications, locked by a login that runs in a Cloudflare Worker (`worker/`)
+  in front of the static files:
+  - **The Collection** (`/department/collection/`): dossiers on people, one
+    draggable hierarchy chart per organization, a file per person with
+    reports. Every record is filed at a tier (1–4, from the subject's rank)
+    in a compartment (public, secret, government, from the organization),
+    and a Curator only sees what their clearance allows.
+  - **Admin hub** (`/department/admin/`): the roll of Curators, their
+    clearances and passwords, and which compartment each organization is in.
+- **Database**: Cloudflare D1 (`wrangler.jsonc` → `d1_databases`). The Worker
+  creates its tables and seeds organizations and ranks on first run. The
+  `MEMBERS` secret is read once, on that first run, to create the first admin
+  accounts; after that, users are managed in the admin hub.
 
 ## Working on it
 
@@ -39,7 +49,25 @@ Secrets** for the login to work:
 | `SESSION_SECRET` | any long random string; changing it signs everyone out |
 | `MEMBERS` | JSON of `username → { hash, name, role }` (see below) |
 
+## Clearance model
+
+| | Reads |
+| --- | --- |
+| Tier 1 | Enlisted and NCO files |
+| Tier 2 | + Commissioned officers |
+| Tier 3 | + General ranks, heads of state, government |
+| Tier 4 | Everything in every compartment, including the Party tab |
+
+Tiers 1–3 are held per compartment (public, secret, government). Tier 4 is a
+single flag. A person's tier comes from the band of their rank (the author may
+raise it); their compartment comes from their organization (admins can move
+an organization between compartments). Anyone signed in may open a file or
+add a report; what they can read afterwards is decided by their clearance.
+
 ## Managing members
+
+New members are added in the admin hub. The steps below are only for the very
+first admin, before the database has any users.
 
 Make a password hash (it asks for the password and hides your typing):
 
@@ -77,9 +105,17 @@ src/
   _includes/partials/  the emblem (SVG)
   _data/               site facts, department nav
   assets/              css, js, images
+  department/collection.njk   the Collection app shell
+  department/admin.njk        the admin hub shell
+  assets/js/collection.js     chart, files, reports, dialog
+  assets/js/admin.js          roll and organizations
 worker/
-  index.js             routes: /api/login, /api/logout, /api/me, gate for /department/*
+  index.js             router, login, gate for /department/*
   auth.js              hashing, signing, cookies
-wrangler.jsonc         Worker + static assets configuration
+  db.js                schema, first-run setup, clearance rule
+  seed.js              organizations and ranks from the ranking sheet
+  collection.js        people, files, reports, positions
+  admin.js             users and organizations
+wrangler.jsonc         Worker + static assets + D1 configuration
 scripts/hash-password.mjs
 ```
