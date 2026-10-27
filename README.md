@@ -73,7 +73,10 @@ of users, whether MEMBERS is present and readable) without revealing secrets.
 Tiers 1–3 are held per compartment (public, secret, government). Tier 4 is a
 single flag. A person's tier comes from the band of their rank (the author may
 raise it); their compartment comes from their organization (admins can move
-an organization between compartments). Anyone signed in may open a file or
+an organization between compartments). Per the Division Handbooks, the
+agencies and the garrison (VSK, NYPD, ABI, NSB, 1st MP, 11th, 91st) are
+public (Abt. III Öffentlichkeit), civilians are secret (Abt. II Schatten),
+and Government and the Party are government (Abt. I Regierung). Anyone signed in may open a file or
 add a report; what they can read afterwards is decided by their clearance.
 
 ## Managing members

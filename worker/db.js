@@ -2,7 +2,7 @@
 // The Worker creates its own tables on first use, so no migration step is
 // needed in the dashboard. Statements are idempotent.
 
-import { ORGS, RANKS, OLD_LONG_NAMES } from "./seed.js";
+import { ORGS, RANKS, OLD_LONG_NAMES, OLD_COMPARTMENTS } from "./seed.js";
 import { getMembers } from "./auth.js";
 
 const SCHEMA = `
@@ -125,11 +125,16 @@ async function setup(env) {
         .bind(o.slug, o.name, o.long, o.compartment, o.min_tier, o.sort)
     ));
   }
-  // Corrected organization names, applied only where the old seed value is still in place.
-  await db.batch(Object.entries(OLD_LONG_NAMES).map(([slug, old]) =>
-    db.prepare("UPDATE organizations SET long_name = ? WHERE slug = ? AND long_name = ?")
-      .bind(ORGS.find((o) => o.slug === slug).long, slug, old)
-  ));
+  // Corrected organization names and handbook compartments, applied only
+  // where the old seed value is still in place.
+  await db.batch([
+    ...Object.entries(OLD_LONG_NAMES).map(([slug, old]) =>
+      db.prepare("UPDATE organizations SET long_name = ? WHERE slug = ? AND long_name = ?")
+        .bind(ORGS.find((o) => o.slug === slug).long, slug, old)),
+    ...Object.entries(OLD_COMPARTMENTS).map(([slug, old]) =>
+      db.prepare("UPDATE organizations SET compartment = ? WHERE slug = ? AND compartment = ?")
+        .bind(ORGS.find((o) => o.slug === slug).compartment, slug, old)),
+  ]);
 
   // Ranks: seed on first run; on later runs add any rank the table lacks and
   // bring every rank's band, tier and order in line with the seed. Ranks an

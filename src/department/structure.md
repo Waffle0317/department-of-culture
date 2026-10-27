@@ -28,7 +28,7 @@ Abt. II and Abt. III run placements inside agencies together: Abt. II issues the
 | **Abteilung II · Schatten** | Secret · anonymous, unseen | Anyone, anything: the clubs, halls, congregations, pressrooms and streets of the Capital | Informants under cipher; cover identities; detention on the Court's order and no one's else |
 | **Abteilung III · Öffentlichkeit** | Public · inside the agencies | VSK, NYPD, ABI, NSB and the Army's formations in the Capital | Liaisons and placed Curators inside each agency; carries the Department's requests for force to the Court or the District Attorney |
 
-A Curator is filed to one or more divisions by the Director in the admin hub. The division is where he sits; what he may read is set by his clearance in each compartment.
+A Curator is filed to one or more divisions by the Director in the admin hub. The division is where he sits; what he may read is set by his clearance in each compartment. The Collection is compartmented on the same lanes: files on the agencies and the garrison are read under Öffentlichkeit (public), files on civilians under Schatten (secret), and files on the Government and the Party under Regierung (government).
 
 ## Ranks and shared rules
 
