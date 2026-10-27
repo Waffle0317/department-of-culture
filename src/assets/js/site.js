@@ -49,6 +49,23 @@
     }
   }
 
+  // Word of passage page: show an error passed back, keep the destination.
+  var pwErr = document.querySelector("[data-pw-error]");
+  if (pwErr) {
+    var pq = new URLSearchParams(location.search);
+    var pcode = pq.get("error");
+    if (pcode) {
+      pwErr.hidden = false;
+      pwErr.textContent =
+        pcode === "short" ? "At least 6 characters."
+        : pcode === "match" ? "The two entries did not match."
+        : pcode === "same" ? "Choose a word of passage different from the temporary one."
+        : "Could not set it. Try again.";
+    }
+    var pnext = document.querySelector("[data-pw-next]");
+    if (pnext && pq.get("next")) pnext.value = pq.get("next");
+  }
+
   // Department shell: name the signed-in Curator, show clearance, reveal admin links.
   var who = document.querySelector("[data-user]");
   if (who) {

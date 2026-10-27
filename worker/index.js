@@ -23,6 +23,7 @@ const ROUTES = [
   ["GET",    /^\/api\/logout$/,                               logout,           "public"],
   ["POST",   /^\/api\/logout$/,                               logout,           "public"],
   ["GET",    /^\/api\/me$/,                                   me,               "user"],
+  ["POST",   /^\/api\/password$/,                             changePassword,   "user"],
   ["GET",    /^\/api\/status$/,                               status,           "public"],
   ["POST",   /^\/api\/found$/,                                found,            "public"],
 
@@ -79,6 +80,8 @@ async function api(request, env, url, path) {
         user = await currentUser(request, env);
         if (!user) return error("Sign in required", 401);
         if (access === "admin" && !isAdmin(user)) return error("Admin only", 403);
+        // A temporary password opens nothing but the page to replace it.
+        if (user.must_change && !/^\/api\/(password|me|logout)$/.test(path)) return error("Choose your own word of passage first", 403);
       }
       return await handler({ request, env, url, user, params: m.slice(1).map(Number) });
     } catch (e) {
@@ -97,7 +100,7 @@ async function login({ request, env }) {
   const pass = String(form.get("pass") || "");
   const next = safeNext(form.get("next"));
 
-  const user = await env.DB.prepare("SELECT id, username, pass_hash, active FROM users WHERE username = ?").bind(username).first();
+  const user = await env.DB.prepare("SELECT id, username, pass_hash, active, must_change FROM users WHERE username = ?").bind(username).first();
   const ok = user && user.active ? await verifyPassword(pass, user.pass_hash) : (await verifyPassword(pass, DECOY), false);
   if (!ok) {
     // Nobody on the roll at all means the first-run import had no MEMBERS secret to read.
@@ -107,7 +110,24 @@ async function login({ request, env }) {
   }
 
   const token = await createSession(user, getSessionSecret(env));
-  return redirect(next, { "Set-Cookie": sessionCookie(token) });
+  // A temporary password goes straight to the page that replaces it.
+  const dest = user.must_change ? `/department/password/?next=${encodeURIComponent(next)}` : next;
+  return redirect(dest, { "Set-Cookie": sessionCookie(token) });
+}
+
+// A Curator replaces a temporary password (or changes their own at any time).
+async function changePassword({ request, env, user }) {
+  const form = await request.formData();
+  const pass = String(form.get("pass") || "");
+  const pass2 = String(form.get("pass2") || "");
+  const next = safeNext(form.get("next"));
+  const back = `/department/password/?next=${encodeURIComponent(next)}`;
+  if (pass.length < 6) return redirect(back + "&error=short");
+  if (pass !== pass2) return redirect(back + "&error=match");
+  const current = await env.DB.prepare("SELECT pass_hash FROM users WHERE id = ?").bind(user.id).first();
+  if (await verifyPassword(pass, current.pass_hash)) return redirect(back + "&error=same");
+  await env.DB.prepare("UPDATE users SET pass_hash = ?, must_change = 0 WHERE id = ?").bind(await hashPassword(pass), user.id).run();
+  return redirect(next);
 }
 
 function logout() {
@@ -169,6 +189,7 @@ function me({ user }) {
     },
     tier4: !!user.tier4,
     schatten: inSchatten(user),
+    mustChange: !!user.must_change,
   });
 }
 
@@ -176,6 +197,7 @@ async function gate(request, env, path) {
   if (!env.DB) return redirect("/login/?error=config");
   const user = await currentUser(request, env);
   if (!user) return redirect(`/login/?next=${encodeURIComponent(path)}`);
+  if (user.must_change && !path.startsWith("/department/password")) return redirect(`/department/password/?next=${encodeURIComponent(path)}`);
   if (path.startsWith("/department/admin") && !isAdmin(user)) return redirect("/department/");
   const asset = await env.ASSETS.fetch(request);
   const out = new Response(asset.body, asset);

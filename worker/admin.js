@@ -1,11 +1,13 @@
 // Admin hub: the roll of users and their clearances, and how each
-// organization is compartmented.
+// organization is compartmented. Adding a Curator to the roll also opens
+// their personnel record on the Party tab; later edits keep it in step.
 
 import { json, error, hashPassword } from "./auth.js";
 import { USER_COLS } from "./db.js";
 import { COMPARTMENTS, DEPT_RANKS } from "./seed.js";
 
 const DIVISIONS = ["public", "secret", "government"];
+const DIVISION_ORDER = ["government", "secret", "public"]; // Abt. I, II, III as the hub lists them
 const rankOf = (v) => (DEPT_RANKS.includes(v) ? v : null);
 
 async function readJson(request) {
@@ -22,12 +24,55 @@ function divisions(v) {
   return set.join(",");
 }
 
+// The first division ticked, in the order the hub shows them (Abt. I, II, III).
+function firstDivision(csv) {
+  const set = String(csv || "").split(",");
+  return DIVISION_ORDER.find((d) => set.includes(d)) || null;
+}
+
+/* ---------- the personnel record behind a user ---------- */
+
+async function partyRank(env, partyId, rank) {
+  if (!rank) return null;
+  const r = await env.DB.prepare("SELECT id, tier FROM ranks WHERE org_id = ? AND name = ?").bind(partyId, rank).first();
+  return r || null;
+}
+
+async function openRecord(env, user, adminId) {
+  const party = await env.DB.prepare("SELECT id FROM organizations WHERE slug = 'party'").first();
+  if (!party) return null;
+  const r = await partyRank(env, party.id, user.rank);
+  const res = await env.DB.prepare(`
+    INSERT INTO people (org_id, rank_id, name, status, tier, division, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(party.id, r ? r.id : null, user.name, user.active ? "serving" : "retired", r ? r.tier : 1, firstDivision(user.division), adminId)
+    .run();
+  const id = res.meta.last_row_id;
+  await env.DB.prepare("UPDATE users SET person_id = ? WHERE id = ?").bind(id, user.id).run();
+  return id;
+}
+
+async function syncRecord(env, user) {
+  if (!user.person_id) return;
+  const p = await env.DB.prepare("SELECT p.id, p.status, o.slug FROM people p JOIN organizations o ON o.id = p.org_id WHERE p.id = ?").bind(user.person_id).first();
+  if (!p || p.slug !== "party") return; // record removed or moved; leave it alone
+  const party = await env.DB.prepare("SELECT id FROM organizations WHERE slug = 'party'").first();
+  const r = await partyRank(env, party.id, user.rank);
+  // Keep a status the Director set by hand (leave, probation); only flip serving/retired with active.
+  const status = !user.active ? "retired" : (p.status === "retired" ? "serving" : p.status);
+  await env.DB.prepare(`
+    UPDATE people SET name = ?, rank_id = ?, tier = ?, division = ?, status = ?, updated_at = datetime('now') WHERE id = ?`)
+    .bind(user.name, r ? r.id : null, r ? r.tier : 1, firstDivision(user.division), status, p.id).run();
+}
+
+/* ---------- users ---------- */
+
 export async function listUsers({ env }) {
   const users = (await env.DB.prepare(`SELECT ${USER_COLS} FROM users ORDER BY active DESC, name`).all()).results;
   return json({ users });
 }
 
-export async function createUser({ env, request }) {
+export async function createUser({ env, user: admin, request }) {
   const b = await readJson(request);
   if (!b) return error("Bad request");
   const username = String(b.username || "").trim().toLowerCase();
@@ -41,12 +86,16 @@ export async function createUser({ env, request }) {
   const role = b.role === "admin" ? "admin" : "member";
   const division = divisions(b.division);
   if (!division) return error("Pick at least one division");
+  // The password set here is temporary: the Curator must choose their own at first sign-in.
   const res = await env.DB.prepare(`
-    INSERT INTO users (username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, pass_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    INSERT INTO users (username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, pass_hash, must_change)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`)
     .bind(username, name, role, rankOf(b.rank), division, tier(b.tier_public), tier(b.tier_secret), tier(b.tier_government), flag(b.tier4), await hashPassword(password))
     .run();
-  return json({ id: res.meta.last_row_id }, 201);
+  const id = res.meta.last_row_id;
+  const created = await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).bind(id).first();
+  const personId = await openRecord(env, created, admin.id);
+  return json({ id, person_id: personId }, 201);
 }
 
 export async function updateUser({ env, user, request, params }) {
@@ -82,11 +131,17 @@ export async function updateUser({ env, user, request, params }) {
 
   if (b.password) {
     if (String(b.password).length < 6) return error("Password must be at least 6 characters");
-    await env.DB.prepare("UPDATE users SET pass_hash = ? WHERE id = ?").bind(await hashPassword(String(b.password)), id).run();
+    // A reset by an admin is temporary too, unless they are resetting their own.
+    await env.DB.prepare("UPDATE users SET pass_hash = ?, must_change = ? WHERE id = ?")
+      .bind(await hashPassword(String(b.password)), id === user.id ? 0 : 1, id).run();
   }
   const updated = await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).bind(id).first();
-  return json({ user: updated });
+  if (updated.person_id) await syncRecord(env, updated);
+  else if (b.open_record) await openRecord(env, updated, user.id);
+  return json({ user: await env.DB.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).bind(id).first() });
 }
+
+/* ---------- organizations ---------- */
 
 export async function listOrgs({ env }) {
   const orgs = (await env.DB.prepare(`

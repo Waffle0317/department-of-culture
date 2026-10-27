@@ -68,9 +68,9 @@
       } catch (e) { toast(e.message, 5000); save.disabled = false; }
     });
     $("[data-pass]", tr).addEventListener("click", async () => {
-      const pw = prompt(`New password for ${$(".mono", tr).textContent} (at least 6 characters):`);
+      const pw = prompt(`Temporary password for ${$(".mono", tr).textContent} (at least 6 characters). They will be asked to choose their own at next sign-in:`);
       if (pw === null) return;
-      try { await api("PUT", `/api/admin/users/${tr.dataset.id}`, { password: pw }); toast("Password set"); } catch (e) { toast(e.message, 5000); }
+      try { await api("PUT", `/api/admin/users/${tr.dataset.id}`, { password: pw }); toast("Temporary password set"); } catch (e) { toast(e.message, 5000); }
     });
   }
 

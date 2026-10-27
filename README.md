@@ -81,7 +81,12 @@ add a report; what they can read afterwards is decided by their clearance.
 
 ## Managing members
 
-New members are added in the admin hub. The steps below are only for the very
+New members are added in the admin hub. The password set there is
+temporary: at first sign-in the member is sent to `/department/password/`
+and nothing else opens until they choose their own. An admin password reset
+behaves the same way. Adding a member also opens their personnel record on
+the Party tab (first division ticked, chosen rank); later changes to name,
+rank, division or active status in the hub carry over to that record. The steps below are only for the very
 first admin, before the database has any users.
 
 Make a password hash (it asks for the password and hides your typing):

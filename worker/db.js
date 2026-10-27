@@ -124,6 +124,8 @@ async function setup(env) {
   if (!cols.includes("access")) await db.exec("ALTER TABLE organizations ADD COLUMN access TEXT NOT NULL DEFAULT 'tiered'");
   const ucols = (await db.prepare("PRAGMA table_info(users)").all()).results.map((c) => c.name);
   if (!ucols.includes("rank")) await db.exec("ALTER TABLE users ADD COLUMN rank TEXT");
+  if (!ucols.includes("must_change")) await db.exec("ALTER TABLE users ADD COLUMN must_change INTEGER NOT NULL DEFAULT 0");
+  if (!ucols.includes("person_id")) await db.exec("ALTER TABLE users ADD COLUMN person_id INTEGER");
   const pcols = (await db.prepare("PRAGMA table_info(people)").all()).results.map((c) => c.name);
   if (!pcols.includes("division")) await db.exec("ALTER TABLE people ADD COLUMN division TEXT");
 
@@ -194,7 +196,7 @@ async function setup(env) {
 
 /* ---------- users ---------- */
 
-export const USER_COLS = "id, username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, active, created_at";
+export const USER_COLS = "id, username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, active, must_change, person_id, created_at";
 
 export async function loadUser(env, session) {
   if (!session || !session.id) return null;

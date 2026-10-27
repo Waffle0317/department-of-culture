@@ -20,7 +20,8 @@
   {
     "title": "Papers",
     "items": [
-      { "label": "Calendar of the Days", "url": "/department/calendar/" }
+      { "label": "Calendar of the Days", "url": "/department/calendar/" },
+      { "label": "Word of passage", "url": "/department/password/" }
     ]
   },
   {
