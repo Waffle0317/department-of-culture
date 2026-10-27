@@ -1,4 +1,6 @@
 ---
+# Hidden for now: not built, not linked. Remove the permalink line to bring it back.
+permalink: false
 title: Forms and Templates
 kicker: Papers
 lead: The fixed formats the Department runs on. Fill them in the order given; a paper with a field missing goes back.

@@ -20,7 +20,6 @@
   {
     "title": "Papers",
     "items": [
-      { "label": "Forms and Templates", "url": "/department/forms/" },
       { "label": "Calendar of the Days", "url": "/department/calendar/" }
     ]
   },
