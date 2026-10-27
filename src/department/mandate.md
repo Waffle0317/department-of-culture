@@ -18,14 +18,22 @@ lead: The Department may watch, gather, review and refer; it may not arrest, sea
 | Staff | Curators appointed by and answering to the Advocate alone; Oath of the Second Surrender; faults judged in heightened degree | Hold any other office of the Capital | s.9 |
 | Secrecy | Keep office, sources, investigations and rolls in confidence; rolls held by the Office alone | Disclose to Council, Governor, courts or other agencies without leave | s.10 |
 
+## The Department in the Advocacy
+
+By the Proclamation of 12 October 1962 on the Offices of the Public Advocacy, the Department of Culture is the **corrective arm** of the Office: the watch over the whole culture of the City, print, broadcast, film, stage, music, exhibitions, schools and public observance, and the conduct and speech of public bodies. Beside it stand the Office of the Advocate (which alone answers questions of meaning), the Office of the Arbiter (the judicial branch, led by the Deputy Advocate as Public Arbiter), the Department of Media (the productive arm), the Office for Germanic Affairs, and the Office for Information, Records, and Patents (the registry).
+
 ## Instruments that feed the daily work
 
-- **Seditious Terminology Mandate, Art. V.** Every public servant must report seditious words, insults or slurs to the Department within two hours. The Department is the intake for the whole city.
-- **Determination regarding Richard Dent, s.1.** The Department is charged with securing and examining the records of the District Attorney's office for Dent's tenure.
-- **The Third Work, Book Two, Part Ten.** Tells every servant to submit material before release, give Curators access, withdraw withheld works everywhere, and never warn anyone under review.
+- **Spiritual Penal Law (10 October 1962).** Defines the Public Curator (§10.00), the spiritual offences (Part Three), the modifiers (§65), and the rule that no search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (§200.15).
+- **Mandate on Seditious Terminology (13 October 1962), art. V.** Every public servant must report seditious words, insults or slurs to the Department within two hours. The Department is the intake for the whole city.
+- **Determination under Title 70 regarding Richard Dent (14 October 1962), s.1.** So that nothing bearing on his death is lost, the Department secures the records of the District Attorney's office for his tenure; every officer of that office answers fully when questioned, and none discloses that he was.
+- **The Third Work (10 October 1962), Book Two, Part Ten.** Tells every servant to submit material before release, give Curators access, withdraw withheld works everywhere, and never warn anyone under review. A Curator's request is a request of the Office.
+- **Department of Culture Field Manual.** The Department's own forms and pipeline: Form C-STAMP, C-REVISE and C-BAN for prior review; C-DOSSIER for referral; PA-SPC-01 for the indictment; PA-DA-01 to the District Attorney for a warrant.
+- **Proclamation on the Title of the Security Advocate (23 October 1962).** The Advocate may task the Security Forces with the protection of the Public Curators and the support of the Department in any spiritual inquiry arising from a Title 70 matter.
 - **Mandate of the Court of Public Order (24 October 1962), art. 3.** The Court may investigate, summon, arrest, detain and censor within the Capital. Its process is executed by the Public Curators of the Department and by the Advocate's personal guard, and every organ of the Capital must aid them. Curators act on the Court's process, never on their own authority.
 - **New York Home Rule Act, s.6 and s.5.** The Public Advocate is appointed by the Lord Protector, charged with public morality and spiritual unity, authorized to investigate and adjudicate, and sits on the Council of New York. Every Councillor is a General Officer (Protectorate Act s.4(c)), so files on them are Tier 3.
 - **Constitution, Art. IV(c).** Membership in the Party is required of all civil servants, law enforcement personnel, judicial officers and government employees. A servant not on the Central Membership Registry is a matter for the Collection.
+- **Public Names Order (22 October 1962).** Fixes the names in which the laws are written. “State” for a Duchy is a false report; the Office corrects it.
 
 <div class="callout callout--red">
 <span class="label label--red">Amendment II to the Constitution</span>

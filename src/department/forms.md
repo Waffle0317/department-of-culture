@@ -4,6 +4,19 @@ kicker: Papers
 lead: The fixed formats the Department runs on. Fill them in the order given; a paper with a field missing goes back.
 ---
 
+## The forms of the Field Manual
+
+| Form | Used for | Issued by |
+| --- | --- | --- |
+| C-STAMP | Permit: affixed to approved matter and archived in the master registry | Curator |
+| C-REVISE | Demand alteration: every page and line to be cut; release barred until re-inspection | Curator |
+| C-BAN | Withhold: the work is banned and its manuscripts, plates and tapes impounded into the Collection | Curator |
+| C-DOSSIER | Referral: observation logs and source statements from the Collection, to the Director | Curator |
+| PA-SPC-01 | Indictment under the Spiritual Penal Law, with the modifiers of §65 and the §60.10 charge where warranted | Director |
+| PA-DA-01 | To the District Attorney: compels a warrant application and execution by NYPD, ABI or NSB | Director |
+
+The templates below are the Department's working sheets behind those forms.
+
 ## Collection entry
 
 <div class="callout typewriter">
@@ -13,7 +26,7 @@ Seen or heard: _______________________________<br>
 Date: ________ &nbsp; Time: ______ &nbsp; Place: ______________<br>
 Witnesses: ___________________________________<br>
 Material gathered: ___________________________<br>
-Source (by cipher): ______ &nbsp;·&nbsp; Reported by: ______________<br>
+Source (alphanumeric cipher, known to the supervising Curator only): ______ &nbsp;·&nbsp; Reported by: ______________<br>
 Question of meaning? &nbsp;☐ No &nbsp;☐ Yes (state it plainly below)<br>
 Curator (name and office): ___________________
 </div>
@@ -36,9 +49,9 @@ Filed: ________ (within two hours: ☐ Yes ☐ No, reason: ______)
 
 A good-faith report carries no penalty. A false report is a Title 70 matter.
 
-## Referral package
+## Referral package (Form C-DOSSIER)
 
-To the Advocate. Nothing goes up without every line.
+To the Director, for the Advocate. Nothing goes up without every line.
 
 1. The facts, in order, dated.
 2. The Collection entries relied on, by number.
@@ -55,7 +68,7 @@ To the Advocate. Nothing goes up without every line.
 ORDER UNDER SECTION SIX OF THE MANDATE ON CULTURE<br>
 To: ____________________ (office that licenses, funds, houses, prints or issues)<br>
 From the date of this order, all cultural matter you issue or license is submitted to the Department of Culture before release.<br>
-Submissions are answered within one day: permit; permit with alterations; withhold.<br>
+Submissions are answered within one day: permit (C-STAMP); demand alteration (C-REVISE); withhold (C-BAN).<br>
 The fact of submission is kept confidential by your office.<br>
 Signed, name and office: ____________________ &nbsp; Date: ________
 </div>

@@ -267,6 +267,19 @@ html.js .reveal.is-in { opacity: 1; transform: none; }
 .duty__box { border: 3px double var(--ink); padding: 18px 22px; display: inline-block; margin-top: 8px; }
 .duty__box .typewriter { font-size: 1rem; }
 
+/* barred words */
+.barred { margin-top: clamp(40px, 6vw, 72px); border: 2px solid var(--ink); background: var(--paper-2); padding: clamp(18px, 3vw, 32px); }
+.barred__head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); padding-bottom: 10px; margin-bottom: 14px; }
+.barred__sub { font-style: italic; color: var(--ink-2); font-size: .95rem; }
+.barred__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 28px; }
+.barred__list li { display: flex; flex-direction: column; padding: 6px 0; border-bottom: 1px dotted var(--rule); }
+.barred__list b { font-family: var(--condensed); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .95rem; color: var(--red); }
+.barred__list span { font-size: .92rem; color: var(--ink-2); }
+.barred__foot { margin: 14px 0 0; font-size: .92rem; font-style: italic; color: var(--ink-2); }
+.work__days { margin-top: 24px; border-top: 1px solid rgba(239,232,216,.25); padding-top: 14px; }
+.work__daylist { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
+.work__daylist span { font-family: var(--condensed); text-transform: uppercase; letter-spacing: .12em; font-size: .68rem; border: 1px solid rgba(239,232,216,.4); padding: .35em .6em; }
+
 /* third work */
 .work { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
 .work__cover { max-width: 420px; justify-self: center; box-shadow: 0 30px 60px rgba(0,0,0,.45); transform: rotate(-2deg); }
@@ -398,6 +411,7 @@ body.dept { background: var(--paper-2); }
   .desks { grid-template-columns: 1fr; }
   .posters { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
   .procs, .duty, .work { grid-template-columns: 1fr; }
+  .barred__list { grid-template-columns: 1fr; }
   .advocate { grid-template-columns: 1fr; }
   .advocate .bars { display: none; }
   .advocate__text { grid-column: auto; }

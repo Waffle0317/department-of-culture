@@ -73,7 +73,7 @@ description: The Department of Culture — an instrument of the Public Advocate 
       </div>
       <div class="advocate__text">
         <p>Section six of the New York Home Rule Act charges the Public Advocate, appointed by the Lord Protector and seated on the Council of New York, with the public morality of the Capital and the spiritual unity of the organs of the State with the People, and authorizes him to investigate and adjudicate those matters. Unity and morality are formed in the newspaper and the broadcast, the stage and the song, the classroom and the sermon, the club and the assembly. Their supervision is the Advocate's charge.</p>
-        <p>The Department of Culture is the instrument by which that charge is exercised. It is an investigative body: its Public Curators watch, gather, record and refer. Every finding reaches the Advocate clean, confidential and inside the law. Every question of what the Doctrine means is answered by the Advocate alone, and adjudicated, where it must be, before the Court of Public Order.</p>
+        <p>The Department of Culture is the corrective arm of the Advocacy, as the Department of Media is its productive arm. It is an investigative body: its Public Curators watch, gather, record and refer. Every finding reaches the Advocate clean, confidential and inside the law. Every question of what the Doctrine means is answered by the Advocate alone, and adjudicated, where it must be, before the Court of Public Order.</p>
         <p>The Department holds no power of arrest, search or seizure of its own. It does not need them. The Office and its Court have them.</p>
       </div>
     </div>
@@ -181,11 +181,11 @@ description: The Department of Culture — an instrument of the Public Advocate 
         <div class="poster__tiles on-red" aria-hidden="true">
           {% for i in range(0, 12) %}{% set id = "t" + i %}{% set class = "" %}{% include "partials/emblem.njk" %}{% endfor %}
         </div>
-        <div class="poster__kicker">The Collection · Mandate s.7</div>
+        <div class="poster__kicker">The Third Work · Book One</div>
         <div>
-          <h3 class="poster__title">An entry is not an accusation.</h3>
-          <p class="poster__line">The Collection records. The Advocate decides.</p>
-          <div class="poster__cite">Department of Culture</div>
+          <h3 class="poster__title">Silence<br>is a side.</h3>
+          <p class="poster__line">A man who sees a fault and says nothing has chosen a side, and it isn't the Empire's.</p>
+          <div class="poster__cite">Say what you see · Dare to obey</div>
         </div>
       </article>
 
@@ -222,19 +222,24 @@ description: The Department of Culture — an instrument of the Public Advocate 
           <span class="status">Enroll ↗</span>
         </li>
         <li>
-          <span class="date">Standing</span>
-          <span class="what">Seditious Terminology Mandate<small>Article V: every public servant reports seditious words, insults or slurs to the Department within two hours.</small></span>
+          <span class="date">10 Oct 1962</span>
+          <span class="what">Spiritual Penal Law<small>Transgression and atonement. Every spiritual offence in the Capital is investigated and adjudicated by the Office; questions of meaning are reserved to the Advocate.</small></span>
           <span class="status">In force</span>
         </li>
         <li>
-          <span class="date">Standing</span>
-          <span class="what">Spiritual Penal Code<small>Transgression and atonement. Spiritual offences are referred to the Advocate for adjudication.</small></span>
+          <span class="date">13 Oct 1962</span>
+          <span class="what">Mandate on Seditious Terminology<small>No seditious word, insult or slur in public. Article V: every public servant reports what he hears to the Department within two hours.</small></span>
           <span class="status">In force</span>
         </li>
         <li>
-          <span class="date">Standing</span>
-          <span class="what">Public Names Order<small>Names of the Republic are retired from instruction, signage and record. “State” for Duchy and the like are corrected.</small></span>
+          <span class="date">22 Oct 1962</span>
+          <span class="what">Public Names Order<small>The Empire speaks with one voice. A Duchy is never called a State; a public name that can be read two ways is a false report, and the Office corrects it.</small></span>
           <span class="status">In force</span>
+        </li>
+        <li>
+          <span class="date">22 Oct 1962</span>
+          <span class="what">War on Crime<small>Declared on three fronts: the racketeer and bomb-thrower, the pusher, the grafter. Information in confidence to Box 70, City Hall Station.</small></span>
+          <span class="status">Declared</span>
         </li>
       </ul>
       <figure class="proc-figure">
@@ -264,8 +269,25 @@ description: The Department of Culture — an instrument of the Public Advocate 
           <div class="label">Written reports</div>
           <div class="typewriter">Department of Culture<br>{{ site.box }}<br>{{ site.city }}</div>
         </div>
-        <p class="muted" style="margin-top:22px;font-size:1rem">A good-faith report carries no penalty. A false report, or one made to settle a score, is a Title 70 matter.</p>
+        <p class="muted" style="margin-top:22px;font-size:1rem">A good-faith report carries no penalty, and words repeated to a Public Curator for the purpose of a report are no offence. A false report, or one made to settle a score, is a Title 70 matter.</p>
       </div>
+    </div>
+    <div class="barred reveal">
+      <div class="barred__head">
+        <span class="label label--red">Barred by Article II</span>
+        <span class="barred__sub">Seditious by affiliation. The Advocacy updates this list.</span>
+      </div>
+      <ul class="barred__list">
+        <li><b>“Occupation”</b><span>of the Empire's presence in the Americas</span></li>
+        <li><b>“We the People”</b><span>as a claim of authority</span></li>
+        <li><b>“The Departure”</b><span>the day the Empire “goes home”</span></li>
+        <li><b>“Wait till November”</b><span>that an election could end the Empire</span></li>
+        <li><b>“Revere”</b><span>to tip off before a raid</span></li>
+        <li><b>“S.U.S.”, “L.A.R.P.”, “S.A.H.U.R.”, “6.7”</b><span>the names of hostile organizations</span></li>
+        <li><b>“Kraut”, “Heinie”, “Fritz”, “Jerry”, “Hun”, “Boche”</b><span>slurs against the German People</span></li>
+        <li><b>“Jap”, “Nip”</b><span>slurs against the Japanese People</span></li>
+      </ul>
+      <p class="barred__foot">There is no defence that the words were spoken in jest, in song, in a foreign tongue, in quotation, as a question, or in the belief that no one was listening.</p>
     </div>
   </div>
 </section>
@@ -277,13 +299,20 @@ description: The Department of Culture — an instrument of the Public Advocate 
       <div>
         <div class="section__kicker"><span class="label" style="color:var(--paper)">VI · Doctrine</span></div>
         <h2 class="section__title">The Third Work<br><em>Book Two, Part Ten</em></h2>
-        <p style="font-size:1.2rem;margin-top:22px">What every servant of the Capital owes the Department:</p>
+        <p style="font-size:1.2rem;margin-top:22px">“When a Curator calls at your office, your theatre, your classroom or your door, receive him the way you'd receive a doctor: gladly, and with nothing hidden.”</p>
+        <p class="label" style="color:var(--paper);opacity:.8">What every servant of the Capital owes the Department</p>
         <ul class="work__list">
           <li><b>I</b><span>Submit material before release.</span></li>
           <li><b>II</b><span>Give Curators access wherever they present themselves.</span></li>
           <li><b>III</b><span>Withdraw a withheld work everywhere: shelves, programmes, curricula, catalogues.</span></li>
           <li><b>IV</b><span>Never warn anyone under review.</span></li>
         </ul>
+        <div class="work__days">
+          <span class="label" style="color:var(--paper);opacity:.8">The Days of Providence</span>
+          <div class="work__daylist">
+            <span>25 Dec · Revelation</span><span>22 Jan · Consecration</span><span>14 Feb · Miracle Day</span><span>15 Apr · Day of Peace</span><span>18 Apr · Watch Night</span><span>1st Mon Sep · Day of the Honours</span><span>29 Sep · Day of the Storm</span><span>1st Sun Oct · Deutscher Tag</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
