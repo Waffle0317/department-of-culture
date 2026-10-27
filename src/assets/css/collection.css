@@ -64,6 +64,9 @@
 .node--redacted .node__box { fill: var(--paper-3); stroke: var(--red); }
 .node--redacted:hover .node__box { fill: var(--paper-3); stroke-width: 2; }
 .node__hatch { fill: url(#hatch); opacity: .35; }
+.node--bare .node__box { fill: var(--paper-3); stroke: var(--ink-2); stroke-dasharray: 0; }
+.node--bare .node__hatch { opacity: .22; }
+.node--bare .node__confidential { font-size: 17px; fill: var(--ink-2); }
 .node__name--c { text-anchor: middle; fill: var(--ink); }
 .node__rank--c { text-anchor: middle; fill: var(--ink-2); }
 .node__confidential { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: .14em; fill: var(--red); text-anchor: middle; }

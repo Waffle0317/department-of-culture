@@ -1,13 +1,16 @@
 // The Collection: people, their files, reports and chart positions.
 // Every read applies the clearance rule; every write is recorded with the
 // Curator's id. Anyone may file a person or a report; who can read it is
-// decided by tier and compartment.
+// decided by tier and compartment, by an organization being open to all,
+// or by Abt. II Schatten's broad scope, which shows every tree but nothing
+// of the people in compartments the Curator does not hold.
 
 import { json, error } from "./auth.js";
-import { isAdmin, userTier } from "./db.js";
+import { isAdmin, userTier, orgAccess, personAccess } from "./db.js";
 
 const STATUSES = ["watched", "referred", "closed", "cleared"];
 const MAX_PORTRAIT = 400_000; // characters of data URL (~300 KB image)
+const ORG_COLS = "id, slug, name, long_name, compartment, min_tier, sort, access";
 
 async function readJson(request) {
   try { return await request.json(); } catch { return null; }
@@ -25,19 +28,17 @@ function portraitOk(p) {
 }
 
 async function orgById(env, id) {
-  return env.DB.prepare("SELECT id, slug, name, long_name, compartment, min_tier FROM organizations WHERE id = ?").bind(id).first();
+  return env.DB.prepare(`SELECT ${ORG_COLS} FROM organizations WHERE id = ?`).bind(id).first();
 }
 
-// Load a person with their organization, and check the caller may see them.
+// Load a person with their organization, and check the caller may read the file.
 async function visiblePerson(env, user, id) {
   const p = await env.DB.prepare(`
-    SELECT p.*, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name, r.band AS rank_band
+    SELECT p.*, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name, r.band AS rank_band
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.id = ?`).bind(id).first();
   if (!p) return null;
-  const t = userTier(user, p.compartment);
-  if (t < p.tier || t < p.min_tier) return null;
-  return p;
+  return personAccess(user, p, p.tier) === "full" ? p : null;
 }
 
 // Tier a person is filed at: the rank's band sets the floor; the author may raise it.
@@ -51,33 +52,54 @@ async function computeTier(env, rank_id, requested) {
   return Math.min(4, Math.max(floor, req));
 }
 
+// The tier a reader may read reports at, in this person's organization.
+function readTier(user, p) {
+  const a = orgAccess(user, p);
+  if (a === "full") return 4;
+  if (a === "tiered") return userTier(user, p.compartment);
+  return 0;
+}
+
 /* ---------- organizations ---------- */
 
 export async function listOrgs({ env, user }) {
-  const orgs = (await env.DB.prepare("SELECT id, slug, name, long_name, compartment, min_tier, sort FROM organizations ORDER BY sort").all()).results;
+  const orgs = (await env.DB.prepare(`SELECT ${ORG_COLS} FROM organizations ORDER BY sort`).all()).results;
   const ranks = (await env.DB.prepare("SELECT id, org_id, name, band, tier, sort FROM ranks ORDER BY org_id, sort").all()).results;
-  const visible = orgs.filter((o) => userTier(user, o.compartment) >= o.min_tier);
-  for (const o of visible) {
-    o.tier = userTier(user, o.compartment);
-    o.ranks = ranks.filter((r) => r.org_id === o.id).map(({ id, name, band, tier }) => ({ id, name, band, tier }));
+  const visible = [];
+  for (const o of orgs) {
+    const mode = orgAccess(user, o);
+    if (!mode) continue;
+    visible.push({ ...o, mode, tier: mode === "full" ? 4 : userTier(user, o.compartment),
+      ranks: ranks.filter((r) => r.org_id === o.id).map(({ id, name, band, tier }) => ({ id, name, band, tier })) });
   }
-  // Every org (without ranks) so forms can file people anywhere, even where the author cannot read.
-  const all = orgs.map(({ id, slug, name, compartment, min_tier }) => ({ id, slug, name, compartment, min_tier,
+  // Every org (for the filing form), even where the author cannot read.
+  const all = orgs.map(({ id, slug, name, compartment, min_tier, access }) => ({ id, slug, name, compartment, min_tier, access,
     ranks: ranks.filter((r) => r.org_id === id).map(({ id, name, band, tier }) => ({ id, name, band, tier })) }));
   return json({ orgs: visible, all });
 }
 
 /* ---------- people ---------- */
 
+// What a Curator is told about a person they may not read in full.
+function stubOf(user, e) {
+  const a = personAccess(user, e, e.tier);
+  if (a === "full") {
+    const { id, name, title, org_slug, org_name, rank_name } = e;
+    return { id, name, title, org_slug, org_name, rank_name };
+  }
+  if (a === "redacted") return { id: e.id, name: e.name, rank_name: e.rank_name || e.rank_text || null, redacted: 1, tier: Math.max(e.tier, e.min_tier) };
+  if (a === "bare") return { id: e.id, redacted: 1, bare: 1 };
+  return null;
+}
+
 export async function listPeople({ env, user, url }) {
   const slug = url.searchParams.get("org");
-  const org = await env.DB.prepare("SELECT id, slug, name, compartment, min_tier FROM organizations WHERE slug = ?").bind(slug).first();
+  const org = await env.DB.prepare(`SELECT ${ORG_COLS} FROM organizations WHERE slug = ?`).bind(slug).first();
   if (!org) return error("Unknown organization", 404);
-  const t = userTier(user, org.compartment);
-  if (t < org.min_tier) return error("Clearance insufficient", 403);
+  const mode = orgAccess(user, org);
+  if (!mode) return error("Clearance insufficient", 403);
+  const t = mode === "full" ? 4 : userTier(user, org.compartment);
 
-  // Everyone in the organization. People above the caller's clearance come
-  // back as redacted stubs: the chart still shows that someone is there.
   const rows = (await env.DB.prepare(`
     SELECT p.id, p.name, p.title, p.rank_text, p.party_member, p.status, p.tier, p.reports_to, p.x, p.y,
            p.updated_at, r.name AS rank_name, r.band AS rank_band, r.sort AS rank_sort,
@@ -86,34 +108,31 @@ export async function listPeople({ env, user, url }) {
     FROM people p LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.org_id = ?
     ORDER BY COALESCE(r.sort, 999), p.name`).bind(t, org.id).all()).results;
-  const people = rows.map((p) => (p.tier <= t ? p : redacted(p)));
 
-  // Superiors who sit in another organization; redacted when out of clearance.
+  const people = rows.map((p) => {
+    if (mode === "bare") return { id: p.id, redacted: 1, bare: 1, reports_to: p.reports_to, x: p.x, y: p.y, rank_sort: p.rank_sort };
+    if (p.tier <= t) return p;
+    return { id: p.id, name: p.name, rank_name: p.rank_name || p.rank_text || null, rank_sort: p.rank_sort, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
+  });
+
+  // Superiors who sit in another organization.
   const ids = new Set(people.map((p) => p.id));
   const extIds = [...new Set(people.map((p) => p.reports_to).filter((id) => id && !ids.has(id)))];
   let externals = [];
   if (extIds.length) {
     const ext = (await env.DB.prepare(`
-      SELECT p.id, p.name, p.tier, p.title, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
+      SELECT p.id, p.name, p.tier, p.title, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
       FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
       WHERE p.id IN (${extIds.map(() => "?").join(",")})`).bind(...extIds).all()).results;
-    externals = ext.map((e) => (userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)
-      ? { id: e.id, name: e.name, title: e.title, org_slug: e.org_slug, org_name: e.org_name, rank_name: e.rank_name }
-      : { id: e.id, name: e.name, rank_name: e.rank_name, redacted: 1, tier: Math.max(e.tier, e.min_tier) }));
+    externals = ext.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
   }
-  return json({ org: { ...org, tier: t }, people, externals });
-}
-
-// What a Curator without clearance is told about a person: the name, the
-// rank, and that a file exists. Nothing else.
-function redacted(p) {
-  return { id: p.id, name: p.name, rank_name: p.rank_name || p.rank_text || null, rank_sort: p.rank_sort, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
+  return json({ org: { ...org, tier: t, mode }, people, externals });
 }
 
 export async function getPerson({ env, user, params }) {
   const p = await visiblePerson(env, user, params[0]);
   if (!p) return error("No such file, or clearance insufficient", 404);
-  const t = userTier(user, p.compartment);
+  const t = readTier(user, p);
   const reports = (await env.DB.prepare(`
     SELECT rp.id, rp.tier, rp.body, rp.created_at, rp.author_id, u.name AS author_name
     FROM reports rp LEFT JOIN users u ON u.id = rp.author_id
@@ -121,32 +140,22 @@ export async function getPerson({ env, user, params }) {
   const withheld = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t).first()).n;
   const superior = p.reports_to ? await stub(env, user, p.reports_to) : null;
   const subs = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
-    WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e));
+    WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
   const creator = p.created_by ? await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by).first() : null;
   return json({
     person: { ...p, created_by_name: creator ? creator.name : null },
-    reports, withheld, superior, subordinates: subs,
+    reports, withheld, superior, subordinates: subs, readTier: t,
     can: { edit: true, delete: isAdmin(user), admin: isAdmin(user), me: user.id },
   });
 }
 
-// A short reference to another person: their name if the caller may see
-// them, otherwise a redacted marker.
-function stubOf(user, e) {
-  if (userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)) {
-    const { id, name, title, org_slug, org_name, rank_name } = e;
-    return { id, name, title, org_slug, org_name, rank_name };
-  }
-  return { id: e.id, name: e.name, rank_name: e.rank_name, redacted: 1, tier: Math.max(e.tier, e.min_tier) };
-}
-
 async function stub(env, user, id) {
   const e = await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id WHERE p.id = ?`).bind(id).first();
-  return e ? stubOf(user, e) : null;
+  return e ? (stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 }) : null;
 }
 
 async function validatePersonBody(env, body) {
@@ -237,10 +246,10 @@ export async function search({ env, user, url }) {
   const q = s(url.searchParams.get("q"), 80);
   if (!q) return json({ results: [] });
   const rows = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
+    SELECT p.id, p.name, p.title, p.tier, p.rank_text, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.name LIKE ? ORDER BY p.name LIMIT 40`).bind(`%${q}%`).all()).results;
-  const results = rows.filter((e) => userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)).slice(0, 20)
+  const results = rows.filter((e) => personAccess(user, e, e.tier) === "full").slice(0, 20)
     .map(({ id, name, title, org_slug, org_name, rank_name }) => ({ id, name, title, org_slug, org_name, rank_name }));
   return json({ results });
 }
@@ -257,7 +266,7 @@ export async function addReport({ env, user, request, params }) {
   const res = await env.DB.prepare("INSERT INTO reports (person_id, author_id, tier, body) VALUES (?, ?, ?, ?)")
     .bind(p.id, user.id, tier, text).run();
   await env.DB.prepare("UPDATE people SET updated_at = datetime('now') WHERE id = ?").bind(p.id).run();
-  return json({ id: res.meta.last_row_id, tier, visible: userTier(user, p.compartment) >= tier }, 201);
+  return json({ id: res.meta.last_row_id, tier, visible: readTier(user, p) >= tier }, 201);
 }
 
 export async function deleteReport({ env, user, params }) {

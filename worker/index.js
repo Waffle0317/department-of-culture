@@ -8,7 +8,7 @@ import {
   getMembers, hashPassword, verifyPassword, createSession, readSession, sessionCookie, clearCookie,
   safeNext, redirect, json, error,
 } from "./auth.js";
-import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier } from "./db.js";
+import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier, inSchatten } from "./db.js";
 import * as col from "./collection.js";
 import * as adm from "./admin.js";
 import * as notes from "./notes.js";
@@ -167,6 +167,7 @@ function me({ user }) {
       government: userTier(user, "government"),
     },
     tier4: !!user.tier4,
+    schatten: inSchatten(user),
   });
 }
 

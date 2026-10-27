@@ -88,7 +88,7 @@ export async function updateUser({ env, user, request, params }) {
 
 export async function listOrgs({ env }) {
   const orgs = (await env.DB.prepare(`
-    SELECT o.id, o.slug, o.name, o.long_name, o.compartment, o.min_tier, o.sort,
+    SELECT o.id, o.slug, o.name, o.long_name, o.compartment, o.min_tier, o.sort, o.access,
            (SELECT COUNT(*) FROM people p WHERE p.org_id = o.id) AS people
     FROM organizations o ORDER BY o.sort`).all()).results;
   return json({ orgs });
@@ -96,16 +96,17 @@ export async function listOrgs({ env }) {
 
 export async function updateOrg({ env, request, params }) {
   const id = params[0];
-  const o = await env.DB.prepare("SELECT id, compartment, min_tier, name, long_name FROM organizations WHERE id = ?").bind(id).first();
+  const o = await env.DB.prepare("SELECT id, compartment, min_tier, name, long_name, access FROM organizations WHERE id = ?").bind(id).first();
   if (!o) return error("No such organization", 404);
   const b = await readJson(request);
   if (!b) return error("Bad request");
   const compartment = b.compartment !== undefined ? b.compartment : o.compartment;
   if (!COMPARTMENTS.includes(compartment)) return error("Compartment must be public, secret or government");
   const min_tier = b.min_tier !== undefined ? Math.max(1, Math.min(4, Number(b.min_tier) || 1)) : o.min_tier;
+  const access = b.access !== undefined ? (b.access === "open" ? "open" : "tiered") : o.access;
   const name = b.name !== undefined ? String(b.name).trim() || o.name : o.name;
   const long_name = b.long_name !== undefined ? String(b.long_name).trim() || null : o.long_name;
-  await env.DB.prepare("UPDATE organizations SET compartment = ?, min_tier = ?, name = ?, long_name = ? WHERE id = ?")
-    .bind(compartment, min_tier, name, long_name, id).run();
+  await env.DB.prepare("UPDATE organizations SET compartment = ?, min_tier = ?, access = ?, name = ?, long_name = ? WHERE id = ?")
+    .bind(compartment, min_tier, access, name, long_name, id).run();
   return json({ ok: true });
 }

@@ -2,7 +2,7 @@
 // The Worker creates its own tables on first use, so no migration step is
 // needed in the dashboard. Statements are idempotent.
 
-import { ORGS, RANKS, OLD_LONG_NAMES, OLD_COMPARTMENTS } from "./seed.js";
+import { ORGS, RANKS, OLD_LONG_NAMES, OLD_COMPARTMENTS, OLD_MIN_TIERS } from "./seed.js";
 import { getMembers } from "./auth.js";
 
 const SCHEMA = `
@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS organizations (
   long_name TEXT,
   compartment TEXT NOT NULL DEFAULT 'public',
   min_tier INTEGER NOT NULL DEFAULT 1,
-  sort INTEGER NOT NULL DEFAULT 0
+  sort INTEGER NOT NULL DEFAULT 0,
+  access TEXT NOT NULL DEFAULT 'tiered'
 );
 CREATE TABLE IF NOT EXISTS ranks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,11 +119,15 @@ async function setup(env) {
     }
   }
 
+  // Columns added after the first release.
+  const cols = (await db.prepare("PRAGMA table_info(organizations)").all()).results.map((c) => c.name);
+  if (!cols.includes("access")) await db.exec("ALTER TABLE organizations ADD COLUMN access TEXT NOT NULL DEFAULT 'tiered'");
+
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {
     await db.batch(ORGS.map((o) =>
-      db.prepare("INSERT INTO organizations (slug, name, long_name, compartment, min_tier, sort) VALUES (?, ?, ?, ?, ?, ?)")
-        .bind(o.slug, o.name, o.long, o.compartment, o.min_tier, o.sort)
+      db.prepare("INSERT INTO organizations (slug, name, long_name, compartment, min_tier, sort, access) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(o.slug, o.name, o.long, o.compartment, o.min_tier, o.sort, o.access || "tiered")
     ));
   }
   // Corrected organization names and handbook compartments, applied only
@@ -134,6 +139,9 @@ async function setup(env) {
     ...Object.entries(OLD_COMPARTMENTS).map(([slug, old]) =>
       db.prepare("UPDATE organizations SET compartment = ? WHERE slug = ? AND compartment = ?")
         .bind(ORGS.find((o) => o.slug === slug).compartment, slug, old)),
+    ...Object.entries(OLD_MIN_TIERS).map(([slug, old]) =>
+      db.prepare("UPDATE organizations SET min_tier = ?, access = ? WHERE slug = ? AND min_tier = ?")
+        .bind(ORGS.find((o) => o.slug === slug).min_tier, ORGS.find((o) => o.slug === slug).access || "tiered", slug, old)),
   ]);
 
   // Ranks: seed on first run; on later runs add any rank the table lacks and
@@ -197,6 +205,35 @@ export function maxTier(user) {
   if (!user) return 0;
   if (user.tier4) return 4;
   return Math.max(Number(user.tier_public || 0), Number(user.tier_secret || 0), Number(user.tier_government || 0));
+}
+
+// Is the user placed in Abt. II Schatten? Schatten sees every tree.
+export function inSchatten(user) {
+  return !!user && String(user.division || "").split(",").includes("secret");
+}
+
+// How a user sees an organization's tab:
+//   "full"  — every file, no tiering (the organization is open to all)
+//   "tiered"— the normal rule: files at or below the user's tier in the compartment
+//   "bare"  — the tree only, every person a plain CONFIDENTIAL card (Schatten's broad scope)
+//   null    — not shown
+export function orgAccess(user, org) {
+  if (!user) return null;
+  if (org.access === "open") return "full";
+  const t = userTier(user, org.compartment);
+  if (t >= Number(org.min_tier || 1)) return "tiered";
+  if (inSchatten(user)) return "bare";
+  return null;
+}
+
+// What a user may see of a person filed at `tier` in `org`:
+//   "full" | "redacted" (name and rank) | "bare" (nothing) | null (not shown)
+export function personAccess(user, org, tier) {
+  const a = orgAccess(user, org);
+  if (a === "full") return "full";
+  if (a === "tiered") return userTier(user, org.compartment) >= Number(tier) ? "full" : "redacted";
+  if (a === "bare") return "bare";
+  return null;
 }
 
 // Can this user see a record filed at `tier` in `compartment`, in an

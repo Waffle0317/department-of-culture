@@ -62,7 +62,7 @@
         if (cl) {
           cl.textContent = d.tier4
             ? "Clearance: Tier 4 · all compartments"
-            : "Clearance: P" + d.tiers.public + " · S" + d.tiers.secret + " · G" + d.tiers.government;
+            : "Clearance: P" + d.tiers.public + " · S" + d.tiers.secret + " · G" + d.tiers.government + (d.schatten ? " · Schatten: every tree" : "");
         }
         if (d.admin) {
           document.querySelectorAll("[data-admin-only]").forEach(function (el) { el.hidden = false; });

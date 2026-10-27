@@ -96,6 +96,7 @@
         <td><input type="text" data-f="long_name" value="${esc(o.long_name || "")}" maxlength="120" style="max-width:260px"></td>
         <td><select data-f="compartment">${["public", "secret", "government"].map((v) => `<option value="${v}" ${o.compartment === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select></td>
         <td><select data-f="min_tier">${[1, 2, 3, 4].map((t) => `<option value="${t}" ${t === o.min_tier ? "selected" : ""}>Tier ${t}${t === 4 ? " only" : "+"}</option>`).join("")}</select></td>
+        <td><select data-f="access"><option value="tiered" ${o.access !== "open" ? "selected" : ""}>Tiered</option><option value="open" ${o.access === "open" ? "selected" : ""}>Open to all</option></select></td>
         <td>${o.people}</td>
         <td class="actions"><button class="btn btn--red btn--sm" type="button" data-save disabled>Save</button></td>
       </tr>`).join("");

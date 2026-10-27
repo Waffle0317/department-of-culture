@@ -54,7 +54,8 @@
       const b = document.createElement("button");
       b.className = "col__tab"; b.type = "button"; b.setAttribute("role", "tab");
       b.setAttribute("aria-selected", state.org && state.org.slug === o.slug ? "true" : "false");
-      b.innerHTML = `${esc(o.name)}<small>${esc(o.compartment)} · T${o.tier}</small>`;
+      const sub = o.mode === "full" && o.access === "open" ? "open to all" : o.mode === "bare" ? `${esc(o.compartment)} · tree only` : `${esc(o.compartment)} · T${o.tier}`;
+      b.innerHTML = `${esc(o.name)}<small>${sub}</small>`;
       b.addEventListener("click", () => selectOrg(o.slug));
       el.tabs.appendChild(b);
     }
@@ -78,6 +79,7 @@
     layout();
     render();
     el.empty.hidden = d.people.length > 0;
+    el.newBtn.hidden = d.org.mode === "bare";
     if (!d.people.some((p) => p.x !== null)) fit();
   }
 
@@ -181,6 +183,15 @@
     const g = mk("g", { class: `node node--t${p.tier || 1}${ext ? " node--ext" : ""}${p.redacted ? " node--redacted" : ""}${state.selected === p.id ? " is-selected" : ""}`, transform: `translate(${p._x} ${p._y})`, "data-id": p.id });
     if (q && !(p.name || "").toLowerCase().includes(q)) g.classList.add("node--dim");
     g.appendChild(mk("rect", { class: "node__box", width: W, height: ext ? 56 : H, rx: 2 }));
+    if (p.bare) {
+      // Seen through Schatten's broad scope: a file exists here, and nothing more is told.
+      const h = ext ? 56 : H;
+      g.classList.add("node--bare");
+      g.appendChild(mk("rect", { class: "node__hatch", x: 2, y: 2, width: W - 4, height: h - 4 }));
+      g.appendChild(mk("text", { class: "node__confidential", x: W / 2, y: h / 2 + 6 }, "CONFIDENTIAL"));
+      g.appendChild(mk("title", {}, "Confidential. Outside your compartments."));
+      return g;
+    }
     if (p.redacted) {
       // A file exists here, but the viewer's clearance does not reach it.
       const h = ext ? 56 : H;
@@ -215,7 +226,7 @@
     const node = e.target.closest(".node");
     el.chart.setPointerCapture(e.pointerId);
     if (node && node.classList.contains("node--redacted")) {
-      toast("Confidential. Your clearance does not reach this file.");
+      toast(node.classList.contains("node--bare") ? "Confidential. Outside your compartments." : "Confidential. Your clearance does not reach this file.");
       drag = { kind: "pan", sx: e.clientX, sy: e.clientY, ox: state.view.x, oy: state.view.y, moved: false };
       return;
     }
@@ -315,8 +326,12 @@
     state.selected = id;
     el.nodes.querySelectorAll(".node").forEach((n) => n.classList.toggle("is-selected", Number(n.dataset.id) === id));
     const p = d.person;
-    const myTier = (window.DOC_ME && (window.DOC_ME.tier4 ? 4 : window.DOC_ME.tiers[p.compartment])) || 1;
     const tierOpts = []; for (let t = p.tier; t <= 4; t++) tierOpts.push(`<option value="${t}">${TIER_LABEL[t]}</option>`);
+    const stubHtml = (s, withTier) => s.bare
+      ? `<span class="chip chip--red">Confidential</span>`
+      : s.redacted
+        ? `${esc(s.name)}${s.rank_name ? ` <span class="muted">· ${esc(s.rank_name)}</span>` : ""} <span class="chip chip--red">Confidential${withTier ? ` · Tier ${s.tier}` : ""}</span>`
+        : `<a href="#" data-open="${s.id}">${esc(s.name)}</a>${withTier ? ` <span class="muted">· ${esc(s.rank_name || "")} ${esc(s.org_name)}</span>` : ""}`;
     el.file.innerHTML = `
       <div class="file">
         <div class="file__top">
@@ -338,8 +353,8 @@
           <span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>
         </div>
         <dl class="file__dl">
-          <dt>Reports to</dt><dd>${d.superior ? (d.superior.redacted ? `${esc(d.superior.name)} <span class="muted">· ${esc(d.superior.rank_name || "")}</span> <span class="chip chip--red">Confidential · Tier ${d.superior.tier}</span>` : `<a href="#" data-open="${d.superior.id}">${esc(d.superior.name)}</a> <span class="muted">· ${esc(d.superior.rank_name || "")} ${esc(d.superior.org_name)}</span>`) : "—"}</dd>
-          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => s.redacted ? `${esc(s.name)}${s.rank_name ? ` <span class="muted">· ${esc(s.rank_name)}</span>` : ""} <span class="chip chip--red">Confidential</span>` : `<a href="#" data-open="${s.id}">${esc(s.name)}</a>`).join(", ") : "—"}</dd>
+          <dt>Reports to</dt><dd>${d.superior ? stubHtml(d.superior, true) : "—"}</dd>
+          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => stubHtml(s, false)).join(", ") : "—"}</dd>
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
@@ -395,7 +410,7 @@
 
   /* ---------- new / edit dialog ---------- */
   function fillOrgSelect(selectedId) {
-    el.pfOrg.innerHTML = state.all.map((o) => `<option value="${o.id}" ${o.id === selectedId ? "selected" : ""}>${esc(o.name)} · ${esc(o.compartment)}${o.min_tier > 1 ? ` · T${o.min_tier}+` : ""}</option>`).join("");
+    el.pfOrg.innerHTML = state.all.map((o) => `<option value="${o.id}" ${o.id === selectedId ? "selected" : ""}>${esc(o.name)} · ${o.access === "open" ? "open to all" : esc(o.compartment)}${o.min_tier > 1 ? ` · T${o.min_tier}+` : ""}</option>`).join("");
   }
   function fillRankSelect(orgId, selectedId) {
     const o = state.all.find((x) => x.id === Number(orgId));

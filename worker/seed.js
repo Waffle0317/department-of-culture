@@ -16,8 +16,12 @@ export const ORGS = [
   { slug: "nsb",        name: "NSB",                          long: "National Security Bureau · Regional Office of the Capital",       compartment: "public",     min_tier: 1, sort: 7 },
   { slug: "civilian",   name: "Civilian",                     long: "Civilians of the Capital",                                        compartment: "secret",     min_tier: 1, sort: 8 },
   { slug: "government", name: "Government",                   long: "Office of the Governor · Council of New York · Civil Service",   compartment: "government", min_tier: 1, sort: 9 },
-  { slug: "party",      name: "Party",                        long: "Imperial Ruling Party · North American Advocacy",                 compartment: "government", min_tier: 4, sort: 10 },
+  { slug: "party",      name: "Party",                        long: "Imperial Ruling Party · North American Advocacy",                 compartment: "government", min_tier: 1, sort: 10, access: "open" },
 ];
+
+// The Party tab was first seeded as Tier 4 only; it is now open to every
+// member. Applied only where that original setting is still in place.
+export const OLD_MIN_TIERS = { party: 4 };
 
 // The compartments as first seeded, so an existing database is moved to the
 // handbook's lanes only where an admin has not already changed the setting.
