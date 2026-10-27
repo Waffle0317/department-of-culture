@@ -8,7 +8,7 @@ import {
   verifyPassword, createSession, readSession, sessionCookie, clearCookie,
   safeNext, redirect, json, error,
 } from "./auth.js";
-import { ensureSchema, loadUser, isAdmin, userTier } from "./db.js";
+import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier } from "./db.js";
 import * as col from "./collection.js";
 import * as adm from "./admin.js";
 
@@ -53,9 +53,9 @@ export default {
 };
 
 async function currentUser(request, env) {
-  if (!env.DB || !env.SESSION_SECRET) return null;
+  if (!env.DB) return null;
   await ensureSchema(env);
-  const session = await readSession(request, env.SESSION_SECRET);
+  const session = await readSession(request, getSessionSecret(env));
   return loadUser(env, session);
 }
 
@@ -81,7 +81,7 @@ async function api(request, env, url, path) {
 }
 
 async function login({ request, env }) {
-  if (!env.DB || !env.SESSION_SECRET) return redirect("/login/?error=config");
+  if (!env.DB) return redirect("/login/?error=config");
   await ensureSchema(env);
   const form = await request.formData();
   const username = String(form.get("user") || "").trim().toLowerCase();
@@ -97,7 +97,7 @@ async function login({ request, env }) {
     return redirect(`/login/?error=1&next=${encodeURIComponent(next)}`);
   }
 
-  const token = await createSession(user, env.SESSION_SECRET);
+  const token = await createSession(user, getSessionSecret(env));
   return redirect(next, { "Set-Cookie": sessionCookie(token) });
 }
 
@@ -123,7 +123,7 @@ function me({ user }) {
 }
 
 async function gate(request, env, path) {
-  if (!env.DB || !env.SESSION_SECRET) return redirect("/login/?error=config");
+  if (!env.DB) return redirect("/login/?error=config");
   const user = await currentUser(request, env);
   if (!user) return redirect(`/login/?next=${encodeURIComponent(path)}`);
   if (path.startsWith("/department/admin") && !isAdmin(user)) return redirect("/department/");

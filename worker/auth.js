@@ -9,7 +9,7 @@ const PBKDF2_ITERATIONS = 100000;
 const enc = new TextEncoder();
 
 export function getMembers(env) {
-  if (!env.MEMBERS || !env.SESSION_SECRET) return null;
+  if (!env.MEMBERS) return null;
   try {
     const raw = JSON.parse(env.MEMBERS);
     const out = {};

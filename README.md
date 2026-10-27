@@ -41,13 +41,17 @@ configuration is `wrangler.jsonc`; the dashboard only needs:
 | Deploy command | `npx wrangler deploy` |
 | Root directory | `/` |
 
-Two secrets must be set under the Worker's **Settings → Variables and
-Secrets** for the login to work:
+One secret must be set under the Worker's **Settings → Variables and
+Secrets** (the runtime ones, not the Build configuration page) for the first
+login to work:
 
-| Name | Value |
-| --- | --- |
-| `SESSION_SECRET` | any long random string; changing it signs everyone out |
-| `MEMBERS` | JSON of `username → { hash, name, role }` (see below) |
+| Name | Type | Value |
+| --- | --- | --- |
+| `MEMBERS` | Secret | JSON of `username → { hash, name, role }` (see below) |
+
+It is read once, when the database has no users, to create the first admin
+accounts. `SESSION_SECRET` is optional: without it the Worker generates a
+signing key on first run and keeps it in the database.
 
 ## Clearance model
 

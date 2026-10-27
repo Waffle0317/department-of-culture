@@ -1,12 +1,17 @@
 # Local development secrets for `npm run preview` (wrangler dev).
-# Copy to .dev.vars (gitignored). On Cloudflare, set the same two as Secrets
-# under the Worker's Settings → Variables and Secrets.
+# Copy to .dev.vars (gitignored).
 #
-# SESSION_SECRET: any long random string. Changing it signs everyone out.
-# MEMBERS: JSON object of username → { hash, name, role }.
+# MEMBERS: JSON object of username → { hash, name, role }. Read once, on the
+#          very first run, to create the first admin accounts. After that,
+#          users live in the database and are managed in the admin hub.
 #          Make a hash with:  npm run hash   (it asks for the password)
+#
+# SESSION_SECRET is optional. If it is not set, the Worker generates a key on
+# first run and keeps it in the database.
+#
+# On Cloudflare, set MEMBERS under the Worker's Settings → Variables and
+# Secrets (the runtime ones, not the Build configuration), as a Secret.
 #
 # The dev roll below has one member, "director", whose password is curator-1962
 
-SESSION_SECRET=replace-with-a-long-random-string
 MEMBERS={"director":{"hash":"pbkdf2$100000$6M03vyBXR6Rd0d9KwdPyMw$Sstw15CyMMFWiNitQlZmIQF2CuCKRlOv8H7W_ziVxaE","name":"Wilhelm Denker","role":"Director"}}

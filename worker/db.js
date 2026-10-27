@@ -72,15 +72,35 @@ CREATE INDEX IF NOT EXISTS reports_person ON reports(person_id);
 `;
 
 let ready = null;
+let sessionSecret = null;
 
+// Creates the tables on first use and resolves to the session-signing key.
 export function ensureSchema(env) {
   if (!ready) ready = setup(env).catch((e) => { ready = null; throw e; });
   return ready;
 }
 
+// The key sessions are signed with: SESSION_SECRET if set, otherwise one the
+// Worker generated and stored in the database on first run.
+export function getSessionSecret(env) {
+  return env.SESSION_SECRET || sessionSecret;
+}
+
 async function setup(env) {
   const db = env.DB;
   await db.exec(SCHEMA.replace(/\n\s*/g, " ").replace(/;\s*/g, ";\n"));
+
+  if (!env.SESSION_SECRET) {
+    const row = await db.prepare("SELECT v FROM meta WHERE k = 'session_secret'").first();
+    if (row) sessionSecret = row.v;
+    else {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      sessionSecret = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+      await db.prepare("INSERT OR IGNORE INTO meta (k, v) VALUES ('session_secret', ?)").bind(sessionSecret).run();
+      const again = await db.prepare("SELECT v FROM meta WHERE k = 'session_secret'").first();
+      sessionSecret = again.v;
+    }
+  }
 
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {

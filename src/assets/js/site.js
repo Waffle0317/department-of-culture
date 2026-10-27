@@ -8,7 +8,7 @@
       err.hidden = false;
       err.textContent =
         code === "config"
-          ? "This site is missing its database or session key. Contact the Director."
+          ? "This site cannot reach its database. Contact the Director."
           : code === "empty"
           ? "The roll is empty: no one has been issued credentials yet. The Director must set the MEMBERS secret."
           : "Credentials not recognised. The attempt has been recorded.";
