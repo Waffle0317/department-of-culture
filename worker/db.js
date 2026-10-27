@@ -131,15 +131,24 @@ async function setup(env) {
       .bind(ORGS.find((o) => o.slug === slug).long, slug, old)
   ));
 
+  // Ranks: seed on first run; on later runs add any rank the table lacks and
+  // bring every rank's band, tier and order in line with the seed. Ranks an
+  // admin has not touched are unaffected in meaning; only new ones appear.
   const rankCount = (await db.prepare("SELECT COUNT(*) AS n FROM ranks").first()).n;
-  if (rankCount === 0) {
-    const orgs = await db.prepare("SELECT id, slug FROM organizations").all();
-    const byslug = Object.fromEntries(orgs.results.map((o) => [o.slug, o.id]));
-    const rows = RANKS.filter((r) => byslug[r.org]);
+  const orgs = await db.prepare("SELECT id, slug FROM organizations").all();
+  const byslug = Object.fromEntries(orgs.results.map((o) => [o.slug, o.id]));
+  const rows = RANKS.filter((r) => byslug[r.org]);
+  if (rankCount < rows.length) {
     for (let i = 0; i < rows.length; i += 50) {
       await db.batch(rows.slice(i, i + 50).map((r) =>
         db.prepare("INSERT OR IGNORE INTO ranks (org_id, name, band, tier, sort) VALUES (?, ?, ?, ?, ?)")
           .bind(byslug[r.org], r.name, r.band, r.tier, r.sort)
+      ));
+    }
+    for (let i = 0; i < rows.length; i += 50) {
+      await db.batch(rows.slice(i, i + 50).map((r) =>
+        db.prepare("UPDATE ranks SET band = ?, tier = ?, sort = ? WHERE org_id = ? AND name = ?")
+          .bind(r.band, r.tier, r.sort, byslug[r.org], r.name)
       ));
     }
   }

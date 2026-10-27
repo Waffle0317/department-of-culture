@@ -99,15 +99,15 @@ export async function listPeople({ env, user, url }) {
       WHERE p.id IN (${extIds.map(() => "?").join(",")})`).bind(...extIds).all()).results;
     externals = ext.map((e) => (userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)
       ? { id: e.id, name: e.name, title: e.title, org_slug: e.org_slug, org_name: e.org_name, rank_name: e.rank_name }
-      : { id: e.id, name: e.name, redacted: 1, tier: Math.max(e.tier, e.min_tier) }));
+      : { id: e.id, name: e.name, rank_name: e.rank_name, redacted: 1, tier: Math.max(e.tier, e.min_tier) }));
   }
   return json({ org: { ...org, tier: t }, people, externals });
 }
 
-// What a Curator without clearance is told about a person: the name, and
-// that a file exists. Nothing else.
+// What a Curator without clearance is told about a person: the name, the
+// rank, and that a file exists. Nothing else.
 function redacted(p) {
-  return { id: p.id, name: p.name, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
+  return { id: p.id, name: p.name, rank_name: p.rank_name || p.rank_text || null, rank_sort: p.rank_sort, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
 }
 
 export async function getPerson({ env, user, params }) {
@@ -139,7 +139,7 @@ function stubOf(user, e) {
     const { id, name, title, org_slug, org_name, rank_name } = e;
     return { id, name, title, org_slug, org_name, rank_name };
   }
-  return { id: e.id, name: e.name, redacted: 1, tier: Math.max(e.tier, e.min_tier) };
+  return { id: e.id, name: e.name, rank_name: e.rank_name, redacted: 1, tier: Math.max(e.tier, e.min_tier) };
 }
 
 async function stub(env, user, id) {

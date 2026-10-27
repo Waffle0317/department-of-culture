@@ -65,8 +65,8 @@ const R = [
   ["nypd", "enlisted", ["Corporal", "Senior Officer", "Officer", "Cadet"]],
 
   ["government", "head",     ["Lord Protector", "Governor of New York", "Mayor of New York City"]],
-  ["government", "general",  ["Councilor", "Undersecretary"]],
-  ["government", "officer",  ["Chief Supervisor", "Senior Supervisor", "Supervisor", "Chief Advisor", "Senior Advisor", "Advisor"]],
+  ["government", "general",  ["Chief Justice", "Comptroller", "Commissioner of Logistics", "District Attorney", "Councilor", "Undersecretary"]],
+  ["government", "officer",  ["Deputy Mayor", "Deputy District Attorney", "Chief Supervisor", "Senior Supervisor", "Supervisor", "Chief Advisor", "Senior Advisor", "Advisor"]],
   ["government", "nco",      ["Chief Associate", "Senior Associate", "Associate", "Senior Clerk", "Clerk"]],
   ["government", "enlisted", ["Senior Assistant", "Assistant", "Apprentice", "Intern"]],
 
