@@ -18,7 +18,7 @@ lead: The Department investigates, records and refers. It exercises the power to
 | Staff | Public Curators appointed by the Advocate, serving at his pleasure and answering to him alone; Oath of the Second Surrender; faults judged in heightened degree; conduct supervised by the Office | Hold any other office of the Capital | s.9 |
 | Secrecy | Conduct the whole of its functions in confidence; rolls of Curators and sources kept by the Office alone | Lay the rolls before Council, Governor, any court or any agency; disclose office, investigations, sources or the Collection without leave. A Curator who does is tried and forfeits his office | s.10 |
 
-The full text of the Mandate stands on the public proclamations page.
+The full text of the Mandate is held in the Department: [Mandate on Culture (text)](/department/mandate-text/). It is not released to the public.
 
 ## The Department in the Advocacy
 

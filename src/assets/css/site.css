@@ -181,6 +181,14 @@ html.js .reveal.is-in { opacity: 1; transform: none; }
 .hero__stamp { position: absolute; right: -4%; bottom: 2%; }
 @media (prefers-reduced-motion: reduce) { .hero__ring, .hero__ring-text { animation: none; } }
 
+/* dare to obey */
+.dare { background: var(--paper); padding: clamp(18px, 3vw, 30px) var(--gutter); }
+.dare--inline { background: transparent; padding: clamp(32px, 5vw, 56px) 0 0; }
+.dare__inner { max-width: var(--max); margin: 0 auto; display: flex; align-items: center; gap: clamp(16px, 3vw, 36px); }
+.dare__rule { flex: 1; height: 3px; background: var(--ink); position: relative; }
+.dare__rule::after { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 1px; background: var(--red); }
+.dare__text { font-family: var(--stencil); text-transform: uppercase; letter-spacing: .22em; font-size: clamp(1.6rem, 4.5vw, 3rem); color: var(--red); white-space: nowrap; line-height: 1; }
+
 /* ticker */
 .ticker { background: var(--ink); color: var(--paper); overflow: hidden; white-space: nowrap; border-top: 4px solid var(--red); border-bottom: 4px solid var(--red); }
 .ticker__track { display: inline-block; padding: 12px 0; animation: ticker 60s linear infinite; font-family: var(--condensed); text-transform: uppercase; letter-spacing: .22em; font-size: .78rem; }
