@@ -15,6 +15,8 @@
 
   const tierSel = (name, v) => `<select data-f="${name}">${[0, 1, 2, 3].map((t) => `<option value="${t}" ${t === Number(v) ? "selected" : ""}>${t === 0 ? "none" : "Tier " + t}</option>`).join("")}</select>`;
   const DIVS = [["government", "Abt. I Regierung"], ["secret", "Abt. II Schatten"], ["public", "Abt. III Öffentlichkeit"]];
+  const RANKS = ["Kulturdirektor", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
+  const rankSel = (v) => `<select data-f="rank"><option value="">—</option>${RANKS.map((r) => `<option value="${r}" ${v === r ? "selected" : ""}>${r}</option>`).join("")}</select>`;
   const divBoxes = (v) => {
     const set = String(v || "").split(",");
     return `<div class="adm__divs">${DIVS.map(([d, label]) => `<label><input type="checkbox" data-div="${d}" ${set.includes(d) ? "checked" : ""}> ${label}</label>`).join("")}</div>`;
@@ -28,6 +30,7 @@
       <tr data-id="${u.id}" class="${u.active ? "" : "is-inactive"}">
         <td class="mono">${esc(u.username)}</td>
         <td><input type="text" data-f="name" value="${esc(u.name)}" maxlength="80"></td>
+        <td>${rankSel(u.rank)}</td>
         <td><select data-f="role"><option value="member" ${u.role === "member" ? "selected" : ""}>Curator</option><option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option></select></td>
         <td>${divBoxes(u.division)}</td>
         <td>${tierSel("tier_public", u.tier_public)}</td>
@@ -78,7 +81,7 @@
     e.preventDefault();
     const f = userForm;
     const body = {
-      username: f.username.value, name: f.name.value, password: f.password.value, role: f.role.value,
+      username: f.username.value, name: f.name.value, password: f.password.value, role: f.role.value, rank: f.rank.value,
       division: [...f.querySelectorAll("[name=division]:checked")].map((c) => c.value),
       tier4: Number(f.tier4.value), tier_public: Number(f.tier_public.value), tier_secret: Number(f.tier_secret.value), tier_government: Number(f.tier_government.value),
     };

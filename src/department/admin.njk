@@ -20,12 +20,12 @@ app: true
     </div>
     <div class="adm__explain">
       <p><b>Tiers nest.</b> Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government. Each is set per compartment, so a Curator can hold Tier 3 in Public and nothing in Secret. <b>Tier 4</b> reads everything in every compartment, including the Party tab.</p>
-      <p><b>Divisions</b> are where the Curator sits in the Department: Abt. I Regierung (government, in the open), Abt. II Schatten (secret, unseen), Abt. III Öffentlichkeit (public, inside the agencies). A Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
+      <p><b>Rank</b> is the Curator's standing in the Department, Kulturdirektor down to Anwärter; it is shown beside their name and changes nothing about what they may read. <b>Divisions</b> are where the Curator sits in the Department: Abt. I Regierung (government, in the open), Abt. II Schatten (secret, unseen), Abt. III Öffentlichkeit (public, inside the agencies). A Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
     </div>
     <div class="adm__tablewrap">
       <table class="adm__table" id="usersTable">
         <thead><tr>
-          <th>Username</th><th>Name</th><th>Role</th><th>Divisions</th>
+          <th>Username</th><th>Name</th><th>Rank</th><th>Role</th><th>Divisions</th>
           <th>Public</th><th>Secret</th><th>Government</th><th>Tier 4</th><th>Active</th><th></th>
         </tr></thead>
         <tbody></tbody>
@@ -59,6 +59,7 @@ app: true
         <label class="field"><span>Username (for signing in)</span><input name="username" required pattern="[a-zA-Z0-9._-]{2,40}" autocapitalize="off"></label>
         <label class="field"><span>Display name</span><input name="name" required maxlength="80"></label>
         <label class="field"><span>Password</span><input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
+        <label class="field"><span>Rank</span><select name="rank"><option value="">—</option><option>Kulturdirektor</option><option>Abteilungsleiter</option><option>Oberkurator</option><option selected>Kurator</option><option>Anwärter</option></select></label>
         <label class="field"><span>Role</span><select name="role"><option value="member">Curator</option><option value="admin">Admin</option></select></label>
         <fieldset class="field pf__radio"><span>Divisions (one or more)</span>
           <label><input type="checkbox" name="division" value="government"> Abt. I Regierung</label>

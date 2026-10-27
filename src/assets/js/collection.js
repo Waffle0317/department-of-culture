@@ -5,7 +5,9 @@
   const $ = (s, el) => (el || document).querySelector(s);
   const svgNS = "http://www.w3.org/2000/svg";
   const W = 224, H = 86, GAP_X = 36, GAP_Y = 90;
-  const STATUS = { watched: "Kept and watched", referred: "Referred", cleared: "Cleared", closed: "Closed" };
+  const STATUS = { watched: "Kept and watched", referred: "Referred", cleared: "Cleared", closed: "Closed", serving: "Serving", probation: "On probation", leave: "On leave", retired: "Retired" };
+  const STATUS_CASE = ["watched", "referred", "cleared", "closed"];
+  const STATUS_STAFF = ["serving", "probation", "leave", "retired"];
   const TIER_LABEL = { 1: "Tier 1 · Enlisted / NCO", 2: "Tier 2 · Officers", 3: "Tier 3 · General / Government", 4: "Tier 4 · Office only" };
   const BAND = { head: "Heads of State", general: "General ranks", officer: "Commissioned officers", nco: "Non-commissioned officers", enlisted: "Enlisted and civil" };
 
@@ -13,7 +15,7 @@
     tabs: $("#tabs"), search: $("#search"), fit: $("#fit"), arrange: $("#arrange"), newBtn: $("#new"),
     stage: $("#stage"), chart: $("#chart"), view: $("#view"), links: $("#links"), nodes: $("#nodes"),
     empty: $("#empty"), file: $("#file"), body: $(".col__body"),
-    dialog: $("#dialog"), form: $("#personForm"), pfOrg: $("#pfOrg"), pfRank: $("#pfRank"), pfTier: $("#pfTier"),
+    dialog: $("#dialog"), form: $("#personForm"), pfOrg: $("#pfOrg"), pfRank: $("#pfRank"), pfTier: $("#pfTier"), pfStatus: $("#pfStatus"),
     pfSupId: $("#pfSupId"), pfSupChip: $("#pfSupChip"), pfSupName: $("#pfSupName"), pfSupClear: $("#pfSupClear"),
     pfSupSearch: $("#pfSupSearch"), pfSupResults: $("#pfSupResults"), pfError: $("#pfError"), pfCancel: $("#pfCancel"),
     pfKicker: $("#pfKicker"), pfTitle: $("#pfTitle"), pfSave: $("#pfSave"),
@@ -350,7 +352,7 @@
           <span class="chip chip--ink">${esc(TIER_LABEL[p.tier] || "Tier " + p.tier)}</span>
           <span class="chip">${esc(p.compartment)}</span>
           <span class="chip ${p.status === "referred" ? "chip--red" : ""}">${esc(STATUS[p.status] || p.status)}</span>
-          <span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>
+          ${p.access === "open" ? `<span class="chip">Personnel record</span>` : `<span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>`}
         </div>
         <dl class="file__dl">
           <dt>Reports to</dt><dd>${d.superior ? stubHtml(d.superior, true) : "—"}</dd>
@@ -358,7 +360,7 @@
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
-        <h3>General information</h3>
+        <h3>${p.access === "open" ? "Service record" : "General information"}</h3>
         <div class="file__info">${p.info ? esc(p.info) : '<span class="muted">Nothing recorded yet.</span>'}</div>
         <div class="file__actions">
           <button class="btn btn--ghost btn--sm" type="button" data-edit>Edit file</button>
@@ -434,7 +436,24 @@
     for (let t = floor; t <= 4; t++) html += `<option value="${t}" ${t === want ? "selected" : ""}>${TIER_LABEL[t]}${t === floor ? " (from rank)" : ""}</option>`;
     el.pfTier.innerHTML = html;
   }
-  el.pfOrg.addEventListener("change", () => { fillRankSelect(el.pfOrg.value, null); fillTierSelect(null); });
+  // An open tab (the Party) holds the Department's own personnel: the form
+  // reads like a service record rather than a case file.
+  function applyFormMode(orgId, current) {
+    const o = state.all.find((x) => x.id === Number(orgId));
+    const staff = !!(o && o.access === "open");
+    const list = staff ? STATUS_STAFF : STATUS_CASE;
+    const want = list.includes(current) ? current : list[0];
+    el.pfStatus.innerHTML = list.map((s) => `<option value="${s}" ${s === want ? "selected" : ""}>${STATUS[s]}</option>`).join("");
+    $("#pfParty").hidden = staff;
+    $("#pfTitleLabel").textContent = staff ? "Post · desk · division" : "Title or post";
+    $("#pfTitle").placeholder = staff ? "e.g. Oberkurator, Stage desk, Abt. II Schatten" : "e.g. Precinct 9, Night Desk";
+    $("#pfInfoLabel").textContent = staff ? "Service record" : "General information";
+    $("#pfInfo").placeholder = staff ? "Date sworn, postings, training, commendations, faults and lessons." : "Where seen, with whom, what said, what read. Entries record; they never accuse.";
+    el.pfKicker.textContent = state.editing ? `Collection file · No. ${state.editing.id}` : (staff ? "Personnel record · the Party" : "New file");
+    el.pfTitle.textContent = state.editing ? (staff ? "Amend the record" : "Amend the file") : (staff ? "Enter a member of the Department" : "Open a file");
+    el.pfSave.textContent = state.editing ? "Save amendments" : (staff ? "Enter on the roll" : "Enter in the Collection");
+  }
+  el.pfOrg.addEventListener("change", () => { fillRankSelect(el.pfOrg.value, null); fillTierSelect(null); applyFormMode(el.pfOrg.value, el.form.status.value); });
   el.pfRank.addEventListener("change", () => fillTierSelect(null));
 
   function setSuperior(s) {
@@ -489,18 +508,16 @@
   function openDialog(person) {
     state.editing = person || null; state.portrait = undefined;
     el.form.reset(); el.pfError.hidden = true;
-    el.pfKicker.textContent = person ? `Collection file · No. ${person.id}` : "New file";
-    el.pfTitle.textContent = person ? "Amend the file" : "Open a file";
-    el.pfSave.textContent = person ? "Save amendments" : "Enter in the Collection";
     const orgId = person ? person.org_id : state.org.id;
     fillOrgSelect(orgId);
     fillRankSelect(orgId, person ? person.rank_id : null);
     fillTierSelect(person ? person.tier : null);
+    applyFormMode(orgId, person ? person.status : null);
     if (person) {
       el.form.name.value = person.name || "";
       el.form.rank_text.value = person.rank_text || "";
       el.form.title.value = person.title || "";
-      el.form.status.value = person.status || "watched";
+      if (STATUS[person.status]) el.form.status.value = person.status;
       el.form.info.value = person.info || "";
       el.form.party_member.value = person.party_member === 1 ? "1" : person.party_member === 0 ? "0" : "";
       el.pfPortraitPreview.hidden = !person.portrait; el.pfPortraitClear.hidden = !person.portrait;

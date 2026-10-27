@@ -8,7 +8,8 @@
 import { json, error } from "./auth.js";
 import { isAdmin, userTier, orgAccess, personAccess } from "./db.js";
 
-const STATUSES = ["watched", "referred", "closed", "cleared"];
+// Investigative statuses for the Collection; personnel statuses for an open (Party) tab.
+const STATUSES = ["watched", "referred", "closed", "cleared", "serving", "probation", "leave", "retired"];
 const MAX_PORTRAIT = 400_000; // characters of data URL (~300 KB image)
 const ORG_COLS = "id, slug, name, long_name, compartment, min_tier, sort, access";
 

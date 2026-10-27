@@ -2,7 +2,7 @@
 // The Worker creates its own tables on first use, so no migration step is
 // needed in the dashboard. Statements are idempotent.
 
-import { ORGS, RANKS, OLD_LONG_NAMES, OLD_COMPARTMENTS, OLD_MIN_TIERS } from "./seed.js";
+import { ORGS, RANKS, OLD_LONG_NAMES, OLD_COMPARTMENTS, OLD_MIN_TIERS, DEPT_RANKS } from "./seed.js";
 import { getMembers } from "./auth.js";
 
 const SCHEMA = `
@@ -122,6 +122,8 @@ async function setup(env) {
   // Columns added after the first release.
   const cols = (await db.prepare("PRAGMA table_info(organizations)").all()).results.map((c) => c.name);
   if (!cols.includes("access")) await db.exec("ALTER TABLE organizations ADD COLUMN access TEXT NOT NULL DEFAULT 'tiered'");
+  const ucols = (await db.prepare("PRAGMA table_info(users)").all()).results.map((c) => c.name);
+  if (!ucols.includes("rank")) await db.exec("ALTER TABLE users ADD COLUMN rank TEXT");
 
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {
@@ -147,11 +149,21 @@ async function setup(env) {
   // Ranks: seed on first run; on later runs add any rank the table lacks and
   // bring every rank's band, tier and order in line with the seed. Ranks an
   // admin has not touched are unaffected in meaning; only new ones appear.
-  const rankCount = (await db.prepare("SELECT COUNT(*) AS n FROM ranks").first()).n;
   const orgs = await db.prepare("SELECT id, slug FROM organizations").all();
   const byslug = Object.fromEntries(orgs.results.map((o) => [o.slug, o.id]));
   const rows = RANKS.filter((r) => byslug[r.org]);
-  if (rankCount < rows.length) {
+
+  // The Party tab's ranks are the Department's own; retire any other rank
+  // still filed there (people keep their file, with the rank cleared).
+  if (byslug.party) {
+    const marks = DEPT_RANKS.map(() => "?").join(",");
+    await db.prepare(`UPDATE people SET rank_id = NULL WHERE rank_id IN (SELECT id FROM ranks WHERE org_id = ? AND name NOT IN (${marks}))`)
+      .bind(byslug.party, ...DEPT_RANKS).run();
+    await db.prepare(`DELETE FROM ranks WHERE org_id = ? AND name NOT IN (${marks})`).bind(byslug.party, ...DEPT_RANKS).run();
+  }
+
+  const rankCount = (await db.prepare("SELECT COUNT(*) AS n FROM ranks").first()).n;
+  if (rankCount !== rows.length) {
     for (let i = 0; i < rows.length; i += 50) {
       await db.batch(rows.slice(i, i + 50).map((r) =>
         db.prepare("INSERT OR IGNORE INTO ranks (org_id, name, band, tier, sort) VALUES (?, ?, ?, ?, ?)")
@@ -180,7 +192,7 @@ async function setup(env) {
 
 /* ---------- users ---------- */
 
-export const USER_COLS = "id, username, name, role, division, tier_public, tier_secret, tier_government, tier4, active, created_at";
+export const USER_COLS = "id, username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, active, created_at";
 
 export async function loadUser(env, session) {
   if (!session || !session.id) return null;

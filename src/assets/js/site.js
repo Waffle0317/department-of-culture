@@ -56,7 +56,7 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.name) return;
-        who.textContent = d.role ? d.role + " · " + d.name : d.name;
+        who.textContent = (d.rank || d.role) ? (d.rank || d.role) + " · " + d.name : d.name;
         window.DOC_ME = d;
         var cl = document.querySelector("[data-clearance]");
         if (cl) {

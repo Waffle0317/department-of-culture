@@ -3,9 +3,10 @@
 
 import { json, error, hashPassword } from "./auth.js";
 import { USER_COLS } from "./db.js";
-import { COMPARTMENTS } from "./seed.js";
+import { COMPARTMENTS, DEPT_RANKS } from "./seed.js";
 
 const DIVISIONS = ["public", "secret", "government"];
+const rankOf = (v) => (DEPT_RANKS.includes(v) ? v : null);
 
 async function readJson(request) {
   try { return await request.json(); } catch { return null; }
@@ -41,9 +42,9 @@ export async function createUser({ env, request }) {
   const division = divisions(b.division);
   if (!division) return error("Pick at least one division");
   const res = await env.DB.prepare(`
-    INSERT INTO users (username, name, role, division, tier_public, tier_secret, tier_government, tier4, pass_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(username, name, role, division, tier(b.tier_public), tier(b.tier_secret), tier(b.tier_government), flag(b.tier4), await hashPassword(password))
+    INSERT INTO users (username, name, role, rank, division, tier_public, tier_secret, tier_government, tier4, pass_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(username, name, role, rankOf(b.rank), division, tier(b.tier_public), tier(b.tier_secret), tier(b.tier_government), flag(b.tier4), await hashPassword(password))
     .run();
   return json({ id: res.meta.last_row_id }, 201);
 }
@@ -73,10 +74,11 @@ export async function updateUser({ env, user, request, params }) {
     if (admins === 0) return error("There must always be one active admin");
   }
 
+  const rank = b.rank !== undefined ? rankOf(b.rank) : target.rank;
   await env.DB.prepare(`
-    UPDATE users SET name = ?, role = ?, division = ?, active = ?, tier_public = ?, tier_secret = ?, tier_government = ?, tier4 = ?
+    UPDATE users SET name = ?, role = ?, rank = ?, division = ?, active = ?, tier_public = ?, tier_secret = ?, tier_government = ?, tier4 = ?
     WHERE id = ?`)
-    .bind(name, role, division, active, t.tier_public, t.tier_secret, t.tier_government, t.tier4, id).run();
+    .bind(name, role, rank, division, active, t.tier_public, t.tier_secret, t.tier_government, t.tier4, id).run();
 
   if (b.password) {
     if (String(b.password).length < 6) return error("Password must be at least 6 characters");

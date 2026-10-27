@@ -158,6 +158,7 @@ function me({ user }) {
     user: user.username,
     name: user.name,
     role: user.role === "admin" ? "Admin" : "Curator",
+    rank: user.rank || null,
     admin: isAdmin(user),
     division: user.division,
     divisions: String(user.division || "").split(",").filter(Boolean),
