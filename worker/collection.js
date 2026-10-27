@@ -76,28 +76,37 @@ export async function listPeople({ env, user, url }) {
   const t = userTier(user, org.compartment);
   if (t < org.min_tier) return error("Clearance insufficient", 403);
 
-  const people = (await env.DB.prepare(`
+  // Everyone in the organization. People above the caller's clearance come
+  // back as redacted stubs: the chart still shows that someone is there.
+  const rows = (await env.DB.prepare(`
     SELECT p.id, p.name, p.title, p.rank_text, p.party_member, p.status, p.tier, p.reports_to, p.x, p.y,
            p.updated_at, r.name AS rank_name, r.band AS rank_band, r.sort AS rank_sort,
            CASE WHEN p.portrait IS NULL THEN 0 ELSE 1 END AS has_portrait,
            (SELECT COUNT(*) FROM reports rp WHERE rp.person_id = p.id AND rp.tier <= ?) AS report_count
     FROM people p LEFT JOIN ranks r ON r.id = p.rank_id
-    WHERE p.org_id = ? AND p.tier <= ?
-    ORDER BY COALESCE(r.sort, 999), p.name`).bind(t, org.id, t).all()).results;
+    WHERE p.org_id = ?
+    ORDER BY COALESCE(r.sort, 999), p.name`).bind(t, org.id).all()).results;
+  const people = rows.map((p) => (p.tier <= t ? p : redacted(p)));
 
-  // Superiors who sit in another organization, if the caller may see them.
+  // Superiors who sit in another organization; redacted when out of clearance.
   const ids = new Set(people.map((p) => p.id));
   const extIds = [...new Set(people.map((p) => p.reports_to).filter((id) => id && !ids.has(id)))];
   let externals = [];
   if (extIds.length) {
-    const rows = (await env.DB.prepare(`
+    const ext = (await env.DB.prepare(`
       SELECT p.id, p.name, p.tier, p.title, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
       FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
       WHERE p.id IN (${extIds.map(() => "?").join(",")})`).bind(...extIds).all()).results;
-    externals = rows.filter((e) => userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier))
-      .map(({ id, name, title, org_slug, org_name, rank_name }) => ({ id, name, title, org_slug, org_name, rank_name }));
+    externals = ext.map((e) => (userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)
+      ? { id: e.id, name: e.name, title: e.title, org_slug: e.org_slug, org_name: e.org_name, rank_name: e.rank_name }
+      : { id: e.id, redacted: 1, tier: Math.max(e.tier, e.min_tier) }));
   }
   return json({ org: { ...org, tier: t }, people, externals });
+}
+
+// What a Curator without clearance is told about a person: that a file exists.
+function redacted(p) {
+  return { id: p.id, redacted: 1, tier: p.tier, reports_to: p.reports_to, x: p.x, y: p.y };
 }
 
 export async function getPerson({ env, user, params }) {
@@ -108,28 +117,35 @@ export async function getPerson({ env, user, params }) {
     SELECT rp.id, rp.tier, rp.body, rp.created_at, rp.author_id, u.name AS author_name
     FROM reports rp LEFT JOIN users u ON u.id = rp.author_id
     WHERE rp.person_id = ? AND rp.tier <= ? ORDER BY rp.created_at DESC, rp.id DESC`).bind(p.id, t).all()).results;
-  const superior = p.reports_to ? await visibleStub(env, user, p.reports_to) : null;
+  const withheld = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t).first()).n;
+  const superior = p.reports_to ? await stub(env, user, p.reports_to) : null;
   const subs = (await env.DB.prepare(`
     SELECT p.id, p.name, p.title, p.tier, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
-    WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results
-    .filter((e) => userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier))
-    .map(({ id, name, title, org_slug, org_name, rank_name }) => ({ id, name, title, org_slug, org_name, rank_name }));
+    WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e));
   const creator = p.created_by ? await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by).first() : null;
   return json({
     person: { ...p, created_by_name: creator ? creator.name : null },
-    reports, superior, subordinates: subs,
+    reports, withheld, superior, subordinates: subs,
     can: { edit: true, delete: isAdmin(user), admin: isAdmin(user), me: user.id },
   });
 }
 
-async function visibleStub(env, user, id) {
+// A short reference to another person: their name if the caller may see
+// them, otherwise a redacted marker.
+function stubOf(user, e) {
+  if (userTier(user, e.compartment) >= Math.max(e.tier, e.min_tier)) {
+    const { id, name, title, org_slug, org_name, rank_name } = e;
+    return { id, name, title, org_slug, org_name, rank_name };
+  }
+  return { id: e.id, redacted: 1, tier: Math.max(e.tier, e.min_tier) };
+}
+
+async function stub(env, user, id) {
   const e = await env.DB.prepare(`
     SELECT p.id, p.name, p.title, p.tier, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, r.name AS rank_name
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id WHERE p.id = ?`).bind(id).first();
-  if (!e || userTier(user, e.compartment) < Math.max(e.tier, e.min_tier)) return null;
-  const { name, title, org_slug, org_name, rank_name } = e;
-  return { id: e.id, name, title, org_slug, org_name, rank_name };
+  return e ? stubOf(user, e) : null;
 }
 
 async function validatePersonBody(env, body) {

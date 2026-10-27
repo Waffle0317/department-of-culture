@@ -60,6 +60,12 @@
 .node--ext .node__box { fill: var(--paper-2); stroke-dasharray: 5 4; }
 .node--ext .node__name { fill: var(--ink-2); }
 .node--party .node__box { stroke: var(--red); }
+.node--redacted { cursor: not-allowed; }
+.node--redacted .node__box { fill: var(--paper-3); stroke: var(--red); }
+.node--redacted:hover .node__box { fill: var(--paper-3); stroke-width: 2; }
+.node__hatch { fill: url(#hatch); opacity: .35; }
+.node__confidential { font: 700 18px var(--display); text-transform: uppercase; letter-spacing: .12em; fill: var(--red); text-anchor: middle; }
+.node__foot--c { text-anchor: middle; fill: var(--ink-2); }
 .link { fill: none; stroke: var(--ink); stroke-width: 2; }
 .link--ext { stroke-dasharray: 6 5; stroke: var(--ink-2); }
 .link--hi { stroke: var(--red); stroke-width: 3; }

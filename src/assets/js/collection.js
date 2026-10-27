@@ -92,7 +92,7 @@
         kids.get(p.reports_to).push(p);
       } else roots.push(p);
     }
-    const order = (a, b) => (a.rank_sort ?? 999) - (b.rank_sort ?? 999) || a.name.localeCompare(b.name);
+    const order = (a, b) => (a.rank_sort ?? 999) - (b.rank_sort ?? 999) || (a.name || "").localeCompare(b.name || "");
     roots.sort(order);
     for (const arr of kids.values()) arr.sort(order);
     const width = new Map();
@@ -178,9 +178,18 @@
   }
 
   function nodeEl(p, ext, q) {
-    const g = mk("g", { class: `node node--t${p.tier || 1}${ext ? " node--ext" : ""}${state.selected === p.id ? " is-selected" : ""}`, transform: `translate(${p._x} ${p._y})`, "data-id": p.id });
-    if (q && !p.name.toLowerCase().includes(q)) g.classList.add("node--dim");
+    const g = mk("g", { class: `node node--t${p.tier || 1}${ext ? " node--ext" : ""}${p.redacted ? " node--redacted" : ""}${state.selected === p.id ? " is-selected" : ""}`, transform: `translate(${p._x} ${p._y})`, "data-id": p.id });
+    if (q && !(p.name || "").toLowerCase().includes(q)) g.classList.add("node--dim");
     g.appendChild(mk("rect", { class: "node__box", width: W, height: ext ? 56 : H, rx: 2 }));
+    if (p.redacted) {
+      // A file exists here, but the viewer's clearance does not reach it.
+      const h = ext ? 56 : H;
+      g.appendChild(mk("rect", { class: "node__hatch", x: 2, y: 2, width: W - 4, height: h - 4 }));
+      g.appendChild(mk("text", { class: "node__confidential", x: W / 2, y: h / 2 + (ext ? 2 : -2) }, "CONFIDENTIAL"));
+      g.appendChild(mk("text", { class: "node__foot node__foot--c", x: W / 2, y: h - (ext ? 8 : 12) }, `Tier ${p.tier} clearance required`));
+      g.appendChild(mk("title", {}, "Confidential. Your clearance does not reach this file."));
+      return g;
+    }
     if (!ext) {
       g.appendChild(mk("rect", { class: "node__stripe", x: 2, y: 2, width: 7, height: H - 4 }));
       g.appendChild(mk("circle", { class: "node__avatar", cx: 34, cy: 30, r: 17 }));
@@ -203,6 +212,11 @@
     if (e.button !== 0) return;
     const node = e.target.closest(".node");
     el.chart.setPointerCapture(e.pointerId);
+    if (node && node.classList.contains("node--redacted")) {
+      toast("Confidential. Your clearance does not reach this file.");
+      drag = { kind: "pan", sx: e.clientX, sy: e.clientY, ox: state.view.x, oy: state.view.y, moved: false };
+      return;
+    }
     if (node) {
       const id = Number(node.dataset.id);
       const p = state.byId.get(id) || state.externals.find((x) => x.id === id);
@@ -322,8 +336,8 @@
           <span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>
         </div>
         <dl class="file__dl">
-          <dt>Reports to</dt><dd>${d.superior ? `<a href="#" data-open="${d.superior.id}">${esc(d.superior.name)}</a> <span class="muted">· ${esc(d.superior.rank_name || "")} ${esc(d.superior.org_name)}</span>` : p.reports_to ? '<span class="muted">Above your clearance</span>' : "—"}</dd>
-          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => `<a href="#" data-open="${s.id}">${esc(s.name)}</a>`).join(", ") : "—"}</dd>
+          <dt>Reports to</dt><dd>${d.superior ? (d.superior.redacted ? `<span class="chip chip--red">Confidential · Tier ${d.superior.tier}</span>` : `<a href="#" data-open="${d.superior.id}">${esc(d.superior.name)}</a> <span class="muted">· ${esc(d.superior.rank_name || "")} ${esc(d.superior.org_name)}</span>`) : "—"}</dd>
+          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => s.redacted ? `<span class="chip chip--red">Confidential · Tier ${s.tier}</span>` : `<a href="#" data-open="${s.id}">${esc(s.name)}</a>`).join(", ") : "—"}</dd>
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
@@ -334,6 +348,7 @@
           ${d.can.delete ? `<button class="btn btn--ghost btn--sm" type="button" data-delete style="border-color:var(--red);color:var(--red)">Destroy file</button>` : ""}
         </div>
         <h3>Reports (${d.reports.length})</h3>
+        ${d.withheld ? `<div class="file__hidden">${d.withheld} ${d.withheld === 1 ? "report" : "reports"} withheld · higher clearance required</div>` : ""}
         <form class="file__newreport" data-report>
           <textarea name="body" rows="3" required placeholder="What was seen or heard, when, where, and by whom."></textarea>
           <div class="row">
