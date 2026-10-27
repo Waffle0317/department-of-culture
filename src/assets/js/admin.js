@@ -14,10 +14,10 @@
   function toast(msg, ms = 3000) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastEl._h); toastEl._h = setTimeout(() => { toastEl.hidden = true; }, ms); }
 
   const tierSel = (name, v) => `<select data-f="${name}">${[0, 1, 2, 3].map((t) => `<option value="${t}" ${t === Number(v) ? "selected" : ""}>${t === 0 ? "none" : "Tier " + t}</option>`).join("")}</select>`;
-  const DIVS = ["public", "secret", "government"];
+  const DIVS = [["government", "Abt. I Regierung"], ["secret", "Abt. II Schatten"], ["public", "Abt. III Öffentlichkeit"]];
   const divBoxes = (v) => {
     const set = String(v || "").split(",");
-    return `<div class="adm__divs">${DIVS.map((d) => `<label><input type="checkbox" data-div="${d}" ${set.includes(d) ? "checked" : ""}> ${d[0].toUpperCase() + d.slice(1)}</label>`).join("")}</div>`;
+    return `<div class="adm__divs">${DIVS.map(([d, label]) => `<label><input type="checkbox" data-div="${d}" ${set.includes(d) ? "checked" : ""}> ${label}</label>`).join("")}</div>`;
   };
 
   /* ---------- users ---------- */

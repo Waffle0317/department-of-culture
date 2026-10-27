@@ -20,7 +20,7 @@ app: true
     </div>
     <div class="adm__explain">
       <p><b>Tiers nest.</b> Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government. Each is set per compartment, so a Curator can hold Tier 3 in Public and nothing in Secret. <b>Tier 4</b> reads everything in every compartment, including the Party tab.</p>
-      <p><b>Divisions</b> are where the Curator sits in the Department; a Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
+      <p><b>Divisions</b> are where the Curator sits in the Department: Abt. I Regierung (government, in the open), Abt. II Schatten (secret, unseen), Abt. III Öffentlichkeit (public, inside the agencies). A Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
     </div>
     <div class="adm__tablewrap">
       <table class="adm__table" id="usersTable">
@@ -60,9 +60,9 @@ app: true
         <label class="field"><span>Password</span><input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
         <label class="field"><span>Role</span><select name="role"><option value="member">Curator</option><option value="admin">Admin</option></select></label>
         <fieldset class="field pf__radio"><span>Divisions (one or more)</span>
-          <label><input type="checkbox" name="division" value="public" checked> Public</label>
-          <label><input type="checkbox" name="division" value="secret"> Secret</label>
-          <label><input type="checkbox" name="division" value="government"> Government</label>
+          <label><input type="checkbox" name="division" value="government"> Abt. I Regierung</label>
+          <label><input type="checkbox" name="division" value="secret"> Abt. II Schatten</label>
+          <label><input type="checkbox" name="division" value="public" checked> Abt. III Öffentlichkeit</label>
         </fieldset>
         <label class="field"><span>Tier 4 (everything)</span><select name="tier4"><option value="0">No</option><option value="1">Yes</option></select></label>
         <label class="field"><span>Public tier</span><select name="tier_public"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label>
