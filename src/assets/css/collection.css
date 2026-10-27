@@ -2,7 +2,7 @@
    The Collection (dossier chart) and the Admin hub
    ========================================================================== */
 
-.col [hidden], .adm [hidden] { display: none !important; }
+.col [hidden], .adm [hidden], .wire [hidden] { display: none !important; }
 .dept__shell--app .dept__main { min-height: 100vh; }
 .dept__app { flex: 1; display: flex; flex-direction: column; min-height: calc(100vh - 54px); }
 .dept__clearance { font-size: .72rem; color: var(--gray); }
@@ -176,7 +176,39 @@
 .note__confidential { font: 700 2rem var(--display); text-transform: uppercase; letter-spacing: .16em; color: var(--red); margin: 10px 0 4px; }
 .note__sub { color: var(--ink-2); font-size: .82rem; }
 
+/* ----- the wire (rooms) -------------------------------------------------- */
+.wire { flex: 1; display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 54px); }
+.wire__rooms { background: var(--paper); border-right: 2px solid var(--ink); padding: 18px 14px; display: flex; flex-direction: column; gap: 12px; }
+.wire__roomshead { padding: 0 8px 6px; border-bottom: 1px solid var(--rule); }
+.wire__roomlist { display: flex; flex-direction: column; gap: 2px; }
+.wire__room { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: 0; border-left: 3px solid transparent; padding: 8px 10px; font: 500 .95rem var(--condensed); color: var(--ink); cursor: pointer; }
+.wire__room:hover { background: var(--paper-2); }
+.wire__room.is-current { border-left-color: var(--red); background: var(--paper-2); }
+.wire__badge { background: var(--red); color: var(--paper); font: 600 .68rem var(--condensed); padding: .15em .5em; border-radius: 2px; min-width: 1.6em; text-align: center; }
+.wire__hint { margin-top: auto; font-size: .72rem; color: var(--gray); padding: 0 8px; }
+.wire__main { display: flex; flex-direction: column; min-height: 0; background: var(--paper-2); }
+.wire__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding: 16px var(--gutter) 12px; border-bottom: 2px solid var(--ink); background: var(--paper); }
+.wire__title { font-family: var(--display); text-transform: uppercase; font-size: 1.8rem; line-height: 1; }
+.wire__log { flex: 1; overflow: auto; padding: 18px var(--gutter); display: flex; flex-direction: column; gap: 10px; min-height: 300px; max-height: calc(100vh - 230px); }
+.msg { max-width: 72ch; background: #f6f1e4; border: 1px solid var(--rule); padding: 8px 12px; align-self: flex-start; }
+.msg--mine { align-self: flex-end; border-color: var(--ink); box-shadow: 3px 3px 0 var(--red); }
+.msg--deleted { background: transparent; border: 1px dashed var(--rule); color: var(--gray); font-size: .8rem; }
+.msg__meta { display: flex; gap: 10px; align-items: baseline; font: 400 .66rem var(--condensed); text-transform: uppercase; letter-spacing: .14em; color: var(--ink-2); margin-bottom: 4px; }
+.msg__meta b { font-weight: 600; color: var(--red); }
+.msg__del { margin-left: auto; background: none; border: 0; cursor: pointer; color: var(--gray); font-size: 1rem; line-height: 1; }
+.msg__del:hover { color: var(--red); }
+.msg__body { white-space: pre-wrap; font-size: 1rem; line-height: 1.45; }
+.wire__compose { display: flex; gap: 10px; padding: 12px var(--gutter) 16px; border-top: 2px solid var(--ink); background: var(--paper); }
+.wire__compose textarea { flex: 1; font: 1rem var(--mono); padding: .6em .7em; border: 2px solid var(--ink); background: #fff8ea; resize: none; }
+.wire__compose textarea:focus { outline: 3px solid var(--red); outline-offset: 2px; }
+.wire__closed { padding: 14px var(--gutter); border-top: 2px solid var(--ink); background: var(--paper); color: var(--ink-2); }
+.dept__nav .nav-badge { float: right; background: var(--red); color: var(--paper); font: 600 .66rem var(--condensed); padding: .15em .5em; border-radius: 2px; }
+
 @media (max-width: 900px) {
+  .wire { grid-template-columns: 1fr; }
+  .wire__rooms { border-right: 0; border-bottom: 2px solid var(--ink); }
+  .wire__roomlist { flex-direction: row; flex-wrap: wrap; }
+  .wire__hint { display: none; }
   .col__body.has-file { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
   .col__file { border-left: 0; border-top: 2px solid var(--ink); max-height: 55vh; }
   .pf__grid { grid-template-columns: 1fr; }

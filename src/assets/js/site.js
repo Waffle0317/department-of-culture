@@ -84,8 +84,30 @@
         if (d.admin) {
           document.querySelectorAll("[data-admin-only]").forEach(function (el) { el.hidden = false; });
         }
+        if (!d.mustChange) startWireBadge();
       })
       .catch(function () {});
+  }
+
+  // Unread count on The Wire's sidebar entry, refreshed every half minute.
+  function startWireBadge() {
+    var link = document.querySelector('[data-badge="wire"]');
+    if (!link) return;
+    function tick() {
+      fetch("/api/chat/rooms", { credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          var b = link.querySelector(".nav-badge");
+          if (d.unread > 0) {
+            if (!b) { b = document.createElement("span"); b.className = "nav-badge"; link.appendChild(b); }
+            b.textContent = d.unread;
+          } else if (b) b.remove();
+        })
+        .catch(function () {});
+    }
+    tick();
+    setInterval(tick, 30000);
   }
 
   // Reveal-on-scroll for public sections. Fail-safe: everything is shown

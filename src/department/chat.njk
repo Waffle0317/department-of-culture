@@ -1,0 +1,30 @@
+---
+title: The Wire
+section: Collection
+app: true
+---
+<link rel="stylesheet" href="/assets/css/collection.css">
+<div class="wire" id="wire">
+  <aside class="wire__rooms">
+    <div class="wire__roomshead"><span class="label label--red">Rooms</span></div>
+    <nav class="wire__roomlist" id="roomList" aria-label="Rooms"></nav>
+    <p class="wire__hint typewriter">Messages reach the room within a few seconds. Nothing on the Wire leaves the Department.</p>
+  </aside>
+  <section class="wire__main">
+    <header class="wire__head">
+      <div>
+        <div class="label label--red" id="roomKind">Room</div>
+        <h1 class="wire__title" id="roomName">—</h1>
+      </div>
+      <button class="btn btn--ghost btn--sm" id="older" type="button" hidden>Earlier messages</button>
+    </header>
+    <div class="wire__log" id="log"><p class="muted">Opening the Wire…</p></div>
+    <form class="wire__compose" id="compose">
+      <textarea id="body" rows="2" maxlength="2000" placeholder="Write to the room…" required></textarea>
+      <button class="btn btn--red" type="submit" id="send">Send</button>
+    </form>
+    <div class="wire__closed typewriter" id="closed" hidden>Only the Office posts in Announcements.</div>
+  </section>
+  <div class="adm__toast" id="toast" hidden></div>
+</div>
+<script src="/assets/js/chat.js" defer></script>

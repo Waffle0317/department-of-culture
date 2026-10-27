@@ -12,6 +12,7 @@ import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier, inSchatten
 import * as col from "./collection.js";
 import * as adm from "./admin.js";
 import * as notes from "./notes.js";
+import * as chat from "./chat.js";
 
 // A throwaway hash so a failed lookup costs the same time as a failed password.
 const DECOY = "pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -43,6 +44,13 @@ const ROUTES = [
   ["POST",   /^\/api\/notes\/(\d+)\/restrict$/,               notes.restrict,   "user"],
   ["POST",   /^\/api\/notes\/(\d+)\/unrestrict$/,             notes.unrestrict, "user"],
   ["DELETE", /^\/api\/notes\/(\d+)$/,                         notes.remove,     "user"],
+
+  ["GET",    /^\/api\/chat\/rooms$/,                          chat.listRooms,     "user"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z:]+)$/,               chat.listMessages,  "user"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z:]+)\/older$/,        chat.olderMessages, "user"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z:]+)$/,               chat.postMessage,   "user"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z:]+)\/read$/,         chat.read,          "user"],
+  ["DELETE", /^\/api\/chat\/messages\/(\d+)$/,                chat.deleteMessage, "user"],
 
   ["GET",    /^\/api\/admin\/users$/,                         adm.listUsers,    "admin"],
   ["POST",   /^\/api\/admin\/users$/,                         adm.createUser,   "admin"],
@@ -84,7 +92,7 @@ async function api(request, env, url, path) {
         // A temporary password opens nothing but the page to replace it.
         if (user.must_change && !/^\/api\/(password|me|logout)$/.test(path)) return error("Choose your own word of passage first", 403);
       }
-      return await handler({ request, env, url, user, params: m.slice(1).map(Number) });
+      return await handler({ request, env, url, user, params: m.slice(1).map((v) => (/^\d+$/.test(v) ? Number(v) : v)) });
     } catch (e) {
       console.error(e);
       return error("Server error: " + (e && e.message ? e.message : String(e)), 500);

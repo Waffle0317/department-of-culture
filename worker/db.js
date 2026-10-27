@@ -86,6 +86,23 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS notes_created ON notes(created_at);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  room TEXT NOT NULL,
+  author_id INTEGER,
+  author_name TEXT NOT NULL,
+  author_rank TEXT,
+  body TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS messages_room ON messages(room, id);
+CREATE TABLE IF NOT EXISTS room_reads (
+  user_id INTEGER NOT NULL,
+  room TEXT NOT NULL,
+  last_id INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, room)
+);
 `;
 
 let ready = null;

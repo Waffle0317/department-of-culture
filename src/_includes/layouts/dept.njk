@@ -18,7 +18,7 @@ noindex: true
       <div class="dept__group"{% if group.admin %} data-admin-only hidden{% endif %}>
         <div class="dept__group-title">{{ group.title }}</div>
         {% for item in group.items %}
-        <a href="{{ item.url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.label }}</a>
+        <a href="{{ item.url }}" {% if page.url == item.url %}aria-current="page"{% endif %}{% if item.badge %} data-badge="{{ item.badge }}"{% endif %}>{{ item.label }}</a>
         {% endfor %}
       </div>
       {% endfor %}

@@ -16,6 +16,11 @@ Central website of the Department of Culture, Office of the Public Advocate.
     Tier 3 in any compartment may delete one; Tier 4 may restrict one, which
     shows everyone below Tier 4 a CONFIDENTIAL card instead. Submissions are
     rate-limited per hashed IP and guarded by a honeypot field.
+  - **The Wire** (`/department/chat/`): rooms. Announcements (admins post,
+    everyone reads), Everyone, and one room per division for those who sit in
+    it. Messages are kept in D1 and delivered by polling every few seconds;
+    the sidebar entry shows an unread count. Authors and admins can remove a
+    message, which leaves a marker.
   - **Admin hub** (`/department/admin/`): the roll of Curators, their
     clearances and passwords, and which compartment each organization is in.
 - **Database**: Cloudflare D1 (`wrangler.jsonc` → `d1_databases`). The Worker
