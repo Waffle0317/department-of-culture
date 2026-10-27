@@ -29,7 +29,7 @@ The head of the Department keeps three things personally: the Collection, the ro
 
 | Office | Holder | Desk | Sworn |
 | --- | --- | --- | --- |
-| Director | Mateo Bucholtz | All | — |
+| Director | Wilhelm Denker | All | — |
 | Curator | — | Print and Broadcast | — |
 | Curator | — | Stage, Music and Societies | — |
 | Curator | — | Schools and Instruction | — |

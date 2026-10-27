@@ -41,17 +41,17 @@ Secrets** for the login to work:
 
 ## Managing members
 
-Make a password hash:
+Make a password hash (it asks for the password and hides your typing):
 
 ```bash
-npm run hash -- "the password"
+npm run hash
 ```
 
 Add the printed `pbkdf2$…` string to the `MEMBERS` JSON:
 
 ```json
 {
-  "director": { "hash": "pbkdf2$…", "name": "Mateo Bucholtz", "role": "Director" },
+  "director": { "hash": "pbkdf2$…", "name": "Wilhelm Denker", "role": "Director" },
   "curator1": { "hash": "pbkdf2$…", "name": "…", "role": "Curator" }
 }
 ```

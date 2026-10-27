@@ -4,9 +4,9 @@
 #
 # SESSION_SECRET: any long random string. Changing it signs everyone out.
 # MEMBERS: JSON object of username → { hash, name, role }.
-#          Make a hash with:  npm run hash -- "the password"
+#          Make a hash with:  npm run hash   (it asks for the password)
 #
 # The dev roll below has one member, "director", whose password is curator-1962
 
 SESSION_SECRET=replace-with-a-long-random-string
-MEMBERS={"director":{"hash":"pbkdf2$100000$6M03vyBXR6Rd0d9KwdPyMw$Sstw15CyMMFWiNitQlZmIQF2CuCKRlOv8H7W_ziVxaE","name":"Mateo Bucholtz","role":"Director"}}
+MEMBERS={"director":{"hash":"pbkdf2$100000$6M03vyBXR6Rd0d9KwdPyMw$Sstw15CyMMFWiNitQlZmIQF2CuCKRlOv8H7W_ziVxaE","name":"Wilhelm Denker","role":"Director"}}
