@@ -1,0 +1,88 @@
+---
+layout: layouts/public.njk
+title: Proclamations
+description: The Mandate on Culture and other instruments of the Office of the Public Advocate, as they bear on the Department of Culture.
+permalink: /proclamations/
+---
+
+<div class="proclamation">
+  <div class="section__head" style="text-align:center;margin-top:24px">
+    <div class="label label--red">Instruments of the Office</div>
+    <h1 class="section__title">Proclamation</h1>
+    <p class="muted" style="max-width:52ch;margin:14px auto 0">Concerning the Mandate of the Department of Culture, as issued by the Public Advocate.</p>
+  </div>
+
+  <article class="proc-doc" id="mandate">
+    <div class="proc-doc__side">
+      <span class="label">Imperial<br>Ruling<br>Party.</span>
+      {% set id = "doc" %}{% set class = "" %}{% include "partials/emblem.njk" %}
+      <div class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="proc-doc__body">
+      <div class="proc-doc__masthead">
+        <div class="big">Public Advocate</div>
+        <div class="of">of the</div>
+        <div class="big" style="font-size:clamp(1.6rem,4vw,2.6rem)">Imperial Ruling Party</div>
+        <div class="who">{{ site.city }} &nbsp;|&nbsp; {{ site.advocate }}</div>
+        <div class="proc-doc__banner">Proclamation</div>
+      </div>
+      <div class="proc-doc__title">Concerning the Mandate of the Department of Culture</div>
+      <div class="proc-doc__issued">Issued in New York City on the {{ site.mandateDate }}.</div>
+
+      <h3>Section 1: Short title.</h3>
+      <p>This ordinance shall be known and may be cited as the “Mandate on Culture.”</p>
+
+      <h3>Section 2: Declaration</h3>
+      <ol>
+        <li>It is hereby declared that the spiritual unity of the organs of the State with the People, and the public morality of the Capital, are essential to public order and to the Imperial authority.</li>
+        <li>It is further declared that such unity and morality are formed and sustained in that which the people hear, read, are taught and behold, and that the supervision is committed to the Public Advocate by section six of the New York Home Rule Act.</li>
+        <li>It is the purpose of this mandate to establish an instrument for the exercise of the investigative power so committed, and to provide that it can be exercised with the confidence that its effectiveness requires.</li>
+      </ol>
+
+      <h3>Section 3: Definitions and jurisdiction</h3>
+      <p class="proc-doc__summary">The Department's jurisdiction extends to all cultural matter of the Capital: print, broadcast, film, stage, music, schools, lectures, sermons, clubs and assemblies. A “Curator” is an officer of the Department appointed by the Public Advocate. Any question of meaning is reserved to the Public Advocate.</p>
+
+      <h3>Section 4: Nature of the Department</h3>
+      <p class="proc-doc__summary">The Department exercises the Office's power to investigate under section six of the Home Rule Act, and no other power. It does not arrest, search or seize.</p>
+
+      <h3>Section 5: Questions of meaning</h3>
+      <p class="proc-doc__summary">What the Doctrine, the Emperor or the Lord Protector require is determined by the Public Advocate alone. A Curator records the question and sends it up.</p>
+
+      <h3>Section 6: Prior review</h3>
+      <p class="proc-doc__summary">The Department may order any office that licenses, funds, houses, prints or issues cultural matter to submit it before release, and may permit it, withhold it, or permit it with alterations.</p>
+
+      <h3>Section 7: Investigation and the Collection</h3>
+      <p class="proc-doc__summary">Curators observe, gather, and attend public and admitted gatherings, declared or undeclared, and keep confidential sources. The Department keeps the Collection of persons, matters and observations. An entry in the Collection is not an accusation. To warn a person that they are under review is itself an offence.</p>
+
+      <h3>Section 8: Referral</h3>
+      <p class="proc-doc__summary">Spiritual offences are referred to the Public Advocate for adjudication. Where a coercive measure is needed, the Department refers the matter to the Office, which may require the District Attorney to compel the NSB, the ABI or the NYPD. The Department takes no coercive measure itself.</p>
+
+      <h3>Section 9: Curators</h3>
+      <p class="proc-doc__summary">Curators are appointed by and answer to the Public Advocate alone, take the Oath of the Second Surrender, and hold no other office of the Capital. A Curator's fault is judged in its heightened degree.</p>
+
+      <h3>Section 10: Secrecy</h3>
+      <p class="proc-doc__summary">The office, its sources, its investigations and its rolls are held in confidence. The rolls are held by the Office alone and are not disclosed to Council, Governor, courts or other agencies without leave.</p>
+
+      <div class="proc-doc__seal">
+        <div class="proc-doc__sig">Given under my hand in the Capital of the Protectorate.<b>{{ site.advocate }} · Public Advocate</b></div>
+        <div class="stamp stamp--lg">Approved<small>Office of the Public Advocate</small></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="proc-doc" id="dent" style="margin-top:48px">
+    <div class="proc-doc__side">
+      <span class="label">Imperial<br>Ruling<br>Party.</span>
+      {% set id = "dent" %}{% set class = "" %}{% include "partials/emblem.njk" %}
+    </div>
+    <div class="proc-doc__body">
+      <div class="proc-doc__masthead">
+        <div class="proc-doc__banner" style="margin-top:0">Notice and Determination</div>
+      </div>
+      <div class="proc-doc__title">Regarding Richard Dent, District Attorney</div>
+      <div class="proc-doc__issued">Issued in New York City on the 14th of October, 1962.</div>
+      <p class="proc-doc__summary">The Office has determined that the District Attorney's office acted past what the law gives it during the tenure of Richard Dent. By section 1 of the Determination, the Department of Culture is charged with securing and examining the records of that office for the period of his tenure, and with reporting what is produced, what is outstanding and what is missing to the Public Advocate. Surrendered copies pass to the Office for Information, Records, and Patents.</p>
+      <p class="muted" style="font-size:.95rem">The Determination is the Office's standing lesson: an office that acts beyond its mandate is not forgiven twice.</p>
+    </div>
+  </article>
+</div>

@@ -1,0 +1,50 @@
+---
+layout: layouts/base.njk
+bodyClass: public
+---
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead__inner">
+    <a class="masthead__brand" href="/">
+      {% include "partials/emblem.njk" %}
+      <span class="masthead__text">
+        <span class="masthead__office">{{ site.office }} · {{ site.party }}</span>
+        <span class="masthead__name">Department of <em>Culture</em></span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="/" {% if page.url == "/" %}aria-current="page"{% endif %}>Home</a>
+      <a href="/#advocate">The Advocate</a>
+      <a href="/proclamations/" {% if page.url == "/proclamations/" %}aria-current="page"{% endif %}>Proclamations</a>
+      <a href="/#duty">Your Duty</a>
+      <a class="nav__personnel" href="/login/">Personnel</a>
+    </nav>
+  </div>
+  <div class="masthead__rule"><span></span><span></span><span></span></div>
+</header>
+
+<main id="main">
+  {{ content | safe }}
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      {% include "partials/emblem.njk" %}
+      <div>
+        <div class="label">{{ site.name }}</div>
+        <div class="footer__small">{{ site.office }} · {{ site.party }}<br>{{ site.city }} · {{ site.capital }}</div>
+      </div>
+    </div>
+    <div class="footer__col">
+      <div class="label">Reports</div>
+      <p class="footer__small">Seditious words, insults or slurs heard by any public servant are reported to the Department within two hours.<br>Written reports: {{ site.box }}.</p>
+    </div>
+    <div class="footer__col">
+      <div class="label">Authority</div>
+      <p class="footer__small">Established by the Mandate on Culture, {{ site.established }}, under section six of the New York Home Rule Act.</p>
+      <a class="footer__personnel" href="/login/">Personnel entrance →</a>
+    </div>
+  </div>
+  <div class="footer__bar">A good-faith report carries no penalty. &nbsp;·&nbsp; An entry is not an accusation. &nbsp;·&nbsp; The Department never warns anyone under review.</div>
+</footer>

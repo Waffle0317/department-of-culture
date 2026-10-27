@@ -1,0 +1,53 @@
+---
+layout: layouts/base.njk
+bodyClass: dept
+noindex: true
+---
+<a class="skip" href="#main">Skip to content</a>
+<div class="dept__shell">
+  <aside class="dept__side">
+    <a class="dept__brand" href="/department/">
+      {% include "partials/emblem.njk" %}
+      <span>
+        <span class="dept__brand-name">Department of Culture</span>
+        <span class="dept__brand-sub">Internal · Office use only</span>
+      </span>
+    </a>
+    <nav class="dept__nav" aria-label="Department documents">
+      {% for group in deptnav %}
+      <div class="dept__group">
+        <div class="dept__group-title">{{ group.title }}</div>
+        {% for item in group.items %}
+        <a href="{{ item.url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.label }}</a>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </nav>
+    <div class="dept__side-foot">
+      <div class="dept__user" data-user>Curator</div>
+      <form method="post" action="/api/logout"><button class="btn btn--ghost btn--sm" type="submit">Sign out</button></form>
+      <a class="dept__public" href="/">← Public site</a>
+    </div>
+  </aside>
+  <div class="dept__main">
+    <header class="dept__top">
+      <div class="dept__top-left">
+        <span class="label label--red">Confidential</span>
+        <span class="dept__crumb">{{ section or "Documents" }} / {{ title }}</span>
+      </div>
+      <div class="dept__top-right typewriter">Held for the Office · s.10 Secrecy</div>
+    </header>
+    <main id="main" class="doc">
+      <header class="doc__head">
+        {% if kicker %}<div class="doc__kicker">{{ kicker }}</div>{% endif %}
+        <h1 class="doc__title">{{ title }}</h1>
+        {% if lead %}<p class="doc__lead">{{ lead }}</p>{% endif %}
+        <div class="doc__meta typewriter">{% if issued %}Issued {{ issued }} · {% endif %}{{ site.name }} · {{ site.office }}</div>
+      </header>
+      {{ content | safe }}
+      <footer class="doc__foot typewriter">
+        Signed and held in the name and office of the Department. Not to be disclosed to Council, Governor, courts or any other agency without the leave of the Office (Mandate s.10).
+      </footer>
+    </main>
+  </div>
+</div>

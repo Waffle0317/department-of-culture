@@ -1,0 +1,17 @@
+{
+  "name": "department-of-culture",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Central website of the Department of Culture, Office of the Public Advocate.",
+  "scripts": {
+    "build": "eleventy",
+    "dev": "eleventy --serve",
+    "preview": "eleventy && wrangler pages dev public --port 8788",
+    "hash": "node scripts/hash-password.mjs"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "wrangler": "^4.40.0"
+  },
+  "type": "module"
+}

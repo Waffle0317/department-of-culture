@@ -1,0 +1,28 @@
+<svg class="emblem {{ class }}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Emblem of the Department of Culture" focusable="false">
+  <defs>
+    <clipPath id="em-clip-{{ id or 'a' }}"><circle cx="100" cy="100" r="86"/></clipPath>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="none" stroke="var(--em-red)" stroke-width="9"/>
+  <g clip-path="url(#em-clip-{{ id or 'a' }})">
+    <!-- left constructivist cluster -->
+    <rect x="36" y="14" width="14" height="172" fill="var(--em-red)"/>
+    <rect x="56" y="22" width="22" height="46" fill="var(--em-red)"/>
+    <rect x="56" y="22" width="8" height="78" fill="var(--em-red)"/>
+    <rect x="70" y="56" width="20" height="10" fill="var(--em-ink)"/>
+    <rect x="56" y="132" width="30" height="12" fill="var(--em-red)"/>
+    <rect x="56" y="144" width="10" height="42" fill="var(--em-red)"/>
+    <!-- centre bars -->
+    <rect x="94" y="8" width="12" height="184" fill="var(--em-ink)"/>
+    <rect x="112" y="8" width="5" height="184" fill="var(--em-ink)"/>
+    <!-- right stepped cluster -->
+    <path d="M124 126h40v12h-26v12h26v38h-40z" fill="var(--em-red)"/>
+    <rect x="124" y="20" width="12" height="40" fill="var(--em-red)"/>
+    <rect x="142" y="20" width="24" height="12" fill="var(--em-ink)"/>
+    <!-- eye -->
+    <path d="M22 100 C 52 56, 148 56, 178 100 C 148 144, 52 144, 22 100 Z" fill="var(--em-ink)"/>
+    <path d="M32 100 C 58 66, 142 66, 168 100 C 142 134, 58 134, 32 100 Z" fill="var(--em-paper)"/>
+    <circle cx="100" cy="100" r="30" fill="var(--em-ink)"/>
+    <circle cx="100" cy="100" r="23" fill="var(--em-red)"/>
+    <circle cx="100" cy="100" r="8" fill="var(--em-paper)"/>
+  </g>
+</svg>

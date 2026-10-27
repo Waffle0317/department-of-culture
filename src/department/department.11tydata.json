@@ -1,0 +1,5 @@
+{
+  "layout": "layouts/dept.njk",
+  "section": "Department",
+  "eleventyExcludeFromCollections": true
+}

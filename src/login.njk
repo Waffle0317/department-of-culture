@@ -1,0 +1,22 @@
+---
+layout: layouts/public.njk
+title: Personnel entrance
+permalink: /login/
+noindex: true
+---
+<section class="login">
+  <div class="login__card">
+    <div class="login__stamp stamp">Office use<small>Mandate s.10</small></div>
+    {% set id = "login" %}{% set class = "" %}{% include "partials/emblem.njk" %}
+    <h1 class="login__title">Personnel entrance</h1>
+    <div class="login__sub">Curators present their credentials</div>
+    <div class="login__error" data-login-error hidden></div>
+    <form method="post" action="/api/login" autocomplete="off">
+      <input type="hidden" name="next" value="/department/" data-login-next>
+      <label class="field"><span>Name on the roll</span><input type="text" name="user" required autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Word of passage</span><input type="password" name="pass" required></label>
+      <button class="btn btn--red" type="submit" style="width:100%">Enter the Department</button>
+    </form>
+    <p class="login__foot">Access is recorded. Nothing beyond this door is disclosed to Council, Governor, courts or any other agency without the leave of the Office.</p>
+  </div>
+</section>

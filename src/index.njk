@@ -1,0 +1,275 @@
+---
+layout: layouts/public.njk
+title: Office of the Public Advocate
+description: The Department of Culture — an instrument of the Public Advocate of the Imperial Ruling Party, Capital of the Protectorate. What the people hear, read, are taught and behold.
+---
+
+<section class="hero">
+  <div class="hero__bars"><div class="bars"><span></span><span></span><span></span><span></span></div></div>
+  <div class="hero__inner">
+    <div class="hero__copy">
+      <div class="hero__kicker">
+        <span class="label label--red">Proclaimed {{ site.established }}</span>
+      </div>
+      <h1 class="hero__title">Department<br>of <em>Culture</em></h1>
+      <p class="hero__motto">“{{ site.motto }}”</p>
+      <div class="hero__sub">An instrument of the Public Advocate · {{ site.party }} · {{ site.capital }}</div>
+      <div class="hero__actions">
+        <a class="btn btn--red" href="#duty">Your duty to report</a>
+        <a class="btn btn--ghost" href="/proclamations/">Read the Mandate</a>
+      </div>
+    </div>
+    <div class="hero__art">
+      <div class="hero__ring"></div>
+      <svg class="hero__ring-text" viewBox="0 0 200 200" aria-hidden="true">
+        <defs><path id="ringpath" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
+        <text><textPath href="#ringpath">Spiritual Penal Code · Capital of the Protectorate · Office of the Public Advocate · Imperial Ruling Party ·</textPath></text>
+      </svg>
+      {% set id = "hero" %}{% set class = "emblem--lg" %}{% include "partials/emblem.njk" %}{% set class = "" %}
+      <div class="hero__stamp stamp stamp--lg">In force<small>{{ site.capital }}</small></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span>Seditious words heard are reported within two hours — Art. V</span>
+    <span>All cultural matter is submitted before release — Mandate s.6</span>
+    <span>Written reports to {{ site.box }}</span>
+    <span>A good-faith report carries no penalty</span>
+    <span>The Mandate on Culture in force from {{ site.established }}</span>
+    <span>Watch Night, 18 April — every observance attended</span>
+    <span>Office of the Public Advocate — {{ site.city }}</span>
+    <span>Seditious words heard are reported within two hours — Art. V</span>
+    <span>All cultural matter is submitted before release — Mandate s.6</span>
+    <span>Written reports to {{ site.box }}</span>
+    <span>A good-faith report carries no penalty</span>
+    <span>The Mandate on Culture in force from {{ site.established }}</span>
+    <span>Watch Night, 18 April — every observance attended</span>
+    <span>Office of the Public Advocate — {{ site.city }}</span>
+  </div>
+</div>
+
+<section class="section" id="advocate">
+  <div class="section__inner reveal">
+    <div class="section__head">
+      <div class="section__kicker"><span class="label">I · The Office</span></div>
+      <h2 class="section__title">The Public <em>Advocate</em></h2>
+    </div>
+    <div class="advocate">
+      <div class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div>
+        <div class="advocate__name">{{ site.advocate }}<span>Public Advocate of the {{ site.party }}</span></div>
+        <div class="advocate__who">{{ site.city }}</div>
+        <blockquote class="advocate__quote">
+          It is hereby declared that the spiritual unity of the organs of the State with the People, and the public morality of the Capital, are essential to public order and to the Imperial authority.
+          <cite>Mandate on Culture, section 2 — {{ site.mandateDate }}</cite>
+        </blockquote>
+      </div>
+      <div class="advocate__text">
+        <p>Section six of the New York Home Rule Act commits to the Public Advocate the supervision of all that the people hear, read, are taught and behold. Unity and morality are formed in the newspaper and the broadcast, the stage and the song, the classroom and the sermon, the club and the assembly. Their supervision is the Advocate's charge.</p>
+        <p>The Department of Culture is the instrument by which that charge is exercised. It is an investigative body: it watches, gathers, records and refers. Every finding reaches the Advocate clean, confidential and inside the law. Every question of what the Doctrine means is answered by the Advocate alone.</p>
+        <p>The Department holds no power of arrest, search or seizure. It does not need them. The Office has them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--paper2" id="department">
+  <div class="section__inner reveal">
+    <div class="section__head">
+      <div class="section__kicker"><span class="label">II · The Department</span></div>
+      <h2 class="section__title">Four desks.<br>One <em>Collection.</em></h2>
+    </div>
+    <div class="desks">
+      <article class="desk">
+        <div class="desk__num">1</div>
+        <h3 class="desk__title">Print and Broadcast</h3>
+        <p>Newspapers, books, leaflets, radio, television and film. Every issue, every reel, submitted before release and answered within a day.</p>
+        <div class="desk__foot">Mandate s.6 · Prior review</div>
+      </article>
+      <article class="desk">
+        <div class="desk__num">2</div>
+        <h3 class="desk__title">Stage, Music and Societies</h3>
+        <p>Theatres, clubs, music halls, choirs, Turnvereine, social clubs and veterans' halls. Curators attend performances and meetings, declared or not.</p>
+        <div class="desk__foot">Mandate s.7 · Observation</div>
+      </article>
+      <article class="desk">
+        <div class="desk__num">3</div>
+        <h3 class="desk__title">Schools and Instruction</h3>
+        <p>Classrooms, lectures, textbooks and sermons. Curricula still carrying the names of the Republic are reviewed under the Public Names Order.</p>
+        <div class="desk__foot">Public Names Order</div>
+      </article>
+      <article class="desk">
+        <div class="desk__num">4</div>
+        <h3 class="desk__title">Public Bodies and Observances</h3>
+        <p>Conduct and speech inside offices, Council, precincts and commands; the Days and every Party observance, attended and recorded.</p>
+        <div class="desk__foot">Seditious Terminology Mandate art. V</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="posters">
+  <div class="section__inner reveal">
+    <div class="section__head">
+      <div class="section__kicker"><span class="label">III · Public Notices</span></div>
+      <h2 class="section__title">Posted in the <em>Capital</em></h2>
+    </div>
+    <div class="posters">
+
+      <article class="poster poster--red" style="--tilt:-1.2deg">
+        <div class="poster__art on-red">
+          {% set id = "p1" %}{% set class = "poster__eye" %}{% include "partials/emblem.njk" %}{% set class = "" %}
+        </div>
+        <div class="poster__kicker">The Collection · Mandate s.7</div>
+        <div>
+          <h3 class="poster__title">The eye sees.<br>The eye records.</h3>
+          <p class="poster__line">Nothing public escapes notice. Nothing noticed is forgotten.</p>
+          <div class="poster__cite">Department of Culture · Office of the Public Advocate</div>
+        </div>
+      </article>
+
+      <article class="poster" style="--tilt:.8deg">
+        <div class="poster__art">
+          <div class="poster__bars"><div class="bars"><span></span><span></span><span></span><span></span></div></div>
+        </div>
+        <div class="poster__kicker" style="margin-left:90px">Prior review · Mandate s.6</div>
+        <div style="margin-left:90px">
+          <h3 class="poster__title">Submit<br>before<br>release.</h3>
+          <p class="poster__line">Every page. Every reel. Every stage. Every lesson.</p>
+          <div class="poster__cite">Permit · Permit with alterations · Withhold</div>
+        </div>
+      </article>
+
+      <article class="poster poster--ink" style="--tilt:-.6deg">
+        <div class="poster__kicker">Seditious Terminology Mandate · Art. V</div>
+        <div class="poster__clock">2<small>Hours</small></div>
+        <div>
+          <p class="poster__line">A seditious word heard is a seditious word reported.</p>
+          <div class="poster__cite">Every public servant · Every office · No exception</div>
+        </div>
+      </article>
+
+      <article class="poster" style="--tilt:1.4deg">
+        <div class="poster__img-wrap"><img class="poster__img" src="/assets/img/third-work-cover.webp" alt="Cover of The Third Work, approved by the Office of the Public Advocate" loading="lazy"></div>
+        <div class="poster__shade"></div>
+        <div class="poster__kicker" style="position:relative;color:var(--paper)">Doctrine · Book Two, Part Ten</div>
+        <div style="position:relative;color:var(--paper)">
+          <h3 class="poster__title poster__title--stencil">Read.<br>Keep.<br>Submit.</h3>
+          <div class="poster__cite">The Third Work · Approved</div>
+        </div>
+      </article>
+
+      <article class="poster" style="--tilt:-1deg">
+        <div class="poster__img-wrap"><img class="poster__img" src="/assets/img/proclamation-poster.webp" alt="Proclamation poster: the Spiritual Penal Code is in force in the Capital of the Protectorate" loading="lazy"></div>
+        <div class="poster__shade"></div>
+        <div></div>
+        <div style="position:relative;color:var(--paper)">
+          <h3 class="poster__title">Transgression.<br>Atonement.</h3>
+          <p class="poster__line">The Spiritual Penal Code is in force in the Capital.</p>
+          <div class="poster__cite">Office of the Public Advocate</div>
+        </div>
+      </article>
+
+      <article class="poster poster--red" style="--tilt:.5deg">
+        <div class="poster__tiles on-red" aria-hidden="true">
+          {% for i in range(0, 12) %}{% set id = "t" + i %}{% set class = "" %}{% include "partials/emblem.njk" %}{% endfor %}
+        </div>
+        <div class="poster__kicker">The Collection · Mandate s.7</div>
+        <div>
+          <h3 class="poster__title">An entry is not an accusation.</h3>
+          <p class="poster__line">The Collection records. The Advocate decides.</p>
+          <div class="poster__cite">Department of Culture</div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="section section--ink" id="proclamations">
+  <div class="section__inner reveal">
+    <div class="section__head">
+      <div class="section__kicker"><span class="label" style="color:var(--paper)">IV · Instruments</span></div>
+      <h2 class="section__title">Proclamations <em>in force</em></h2>
+    </div>
+    <div class="procs">
+      <ul class="proc-list">
+        <li>
+          <span class="date">10 Oct 1962</span>
+          <a href="/proclamations/"><span class="what">Mandate on Culture<small>Establishes the Department as the instrument of the Advocate's investigative power under Home Rule Act s.6.</small></span></a>
+          <span class="status">In force</span>
+        </li>
+        <li>
+          <span class="date">14 Oct 1962</span>
+          <a href="/proclamations/#dent"><span class="what">Determination regarding Richard Dent<small>The Department is charged with securing and examining the records of the District Attorney's office for Dent's tenure.</small></span></a>
+          <span class="status">Determined</span>
+        </li>
+        <li>
+          <span class="date">Standing</span>
+          <span class="what">Seditious Terminology Mandate<small>Article V: every public servant reports seditious words, insults or slurs to the Department within two hours.</small></span>
+          <span class="status">In force</span>
+        </li>
+        <li>
+          <span class="date">Standing</span>
+          <span class="what">Spiritual Penal Code<small>Transgression and atonement. Spiritual offences are referred to the Advocate for adjudication.</small></span>
+          <span class="status">In force</span>
+        </li>
+        <li>
+          <span class="date">Standing</span>
+          <span class="what">Public Names Order<small>Names of the Republic are retired from instruction, signage and record. “State” for Duchy and the like are corrected.</small></span>
+          <span class="status">In force</span>
+        </li>
+      </ul>
+      <figure class="proc-figure">
+        <img src="/assets/img/mandate-proclamation-page.png" alt="First page of the Proclamation concerning the Mandate of the Department of Culture, issued in New York City on the 10th of October, 1962" loading="lazy">
+        <div class="stamp stamp--lg" style="--em-red:var(--paper)">Approved<small>Office of the Public Advocate</small></div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="duty">
+  <div class="section__inner reveal">
+    <div class="section__head">
+      <div class="section__kicker"><span class="label">V · Your Duty</span></div>
+      <h2 class="section__title">Heard it?<br>You have <em>two hours.</em></h2>
+    </div>
+    <div class="duty">
+      <div class="duty__clock">2<span>Hours · Art. V</span></div>
+      <div>
+        <p style="font-size:1.25rem">Under Article V of the Seditious Terminology Mandate, every public servant of the Capital who hears a seditious word, insult or slur reports it to the Department of Culture within two hours. The Department is the intake for the whole city.</p>
+        <ol class="duty__steps">
+          <li><div><b>Note it.</b> The time, the place, the words as spoken, who spoke them and who else heard.</div></li>
+          <li><div><b>Report it.</b> To the Department within two hours, by the channel your office has been given, or in writing.</div></li>
+          <li><div><b>Say nothing.</b> Do not confront the speaker, and never tell anyone they are under review. The Department never warns; neither do you.</div></li>
+        </ol>
+        <div class="duty__box">
+          <div class="label">Written reports</div>
+          <div class="typewriter">Department of Culture<br>{{ site.box }}<br>{{ site.city }}</div>
+        </div>
+        <p class="muted" style="margin-top:22px;font-size:1rem">A good-faith report carries no penalty. A false report, or one made to settle a score, is a Title 70 matter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--ink" id="thirdwork">
+  <div class="section__inner reveal">
+    <div class="work">
+      <img class="work__cover" src="/assets/img/third-work-cover.webp" alt="The Third Work" loading="lazy">
+      <div>
+        <div class="section__kicker"><span class="label" style="color:var(--paper)">VI · Doctrine</span></div>
+        <h2 class="section__title">The Third Work<br><em>Book Two, Part Ten</em></h2>
+        <p style="font-size:1.2rem;margin-top:22px">What every servant of the Capital owes the Department:</p>
+        <ul class="work__list">
+          <li><b>I</b><span>Submit material before release.</span></li>
+          <li><b>II</b><span>Give Curators access wherever they present themselves.</span></li>
+          <li><b>III</b><span>Withdraw a withheld work everywhere: shelves, programmes, curricula, catalogues.</span></li>
+          <li><b>IV</b><span>Never warn anyone under review.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

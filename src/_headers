@@ -1,0 +1,5 @@
+/department/*
+  Cache-Control: private, no-store
+  X-Robots-Tag: noindex
+/api/*
+  Cache-Control: no-store
