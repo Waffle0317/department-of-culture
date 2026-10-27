@@ -41,17 +41,20 @@ configuration is `wrangler.jsonc`; the dashboard only needs:
 | Deploy command | `npx wrangler deploy` |
 | Root directory | `/` |
 
-One secret must be set under the Worker's **Settings → Variables and
-Secrets** (the runtime ones, not the Build configuration page) for the first
-login to work:
+No secrets are required. On first run, while the roll is empty, the personnel
+entrance shows a **Found the roll** form; the first account created there is
+the Director (admin, Tier 4). The form disappears once any user exists.
+
+Optional secrets, under the Worker's **Settings → Variables and Secrets**
+(the runtime ones, not the Build configuration page):
 
 | Name | Type | Value |
 | --- | --- | --- |
-| `MEMBERS` | Secret | JSON of `username → { hash, name, role }` (see below) |
+| `MEMBERS` | Secret | JSON of `username → { hash, name, role }`; imported as admins on first run instead of the founding form |
+| `SESSION_SECRET` | Secret | signing key for sessions; without it the Worker generates one and keeps it in the database |
 
-It is read once, when the database has no users, to create the first admin
-accounts. `SESSION_SECRET` is optional: without it the Worker generates a
-signing key on first run and keeps it in the database.
+`/api/status` reports the installation's health (database reachable, number
+of users, whether MEMBERS is present and readable) without revealing secrets.
 
 ## Clearance model
 

@@ -317,6 +317,7 @@ html.js .reveal.is-in { opacity: 1; transform: none; }
 .field input:focus { outline: 3px solid var(--red); outline-offset: 2px; }
 .login__error { background: var(--red); color: var(--paper); padding: 10px 14px; font-family: var(--condensed); text-transform: uppercase; letter-spacing: .12em; font-size: .78rem; margin-bottom: 18px; }
 .login__foot { margin-top: 22px; font-size: .9rem; color: var(--ink-2); text-align: center; }
+.login__found { border-left: 5px solid var(--red); padding: 8px 14px; margin: 0 0 18px; font-size: .95rem; }
 .login__stamp { position: absolute; right: -18px; top: -22px; }
 
 /* ==========================================================================

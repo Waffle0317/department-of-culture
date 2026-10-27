@@ -5,7 +5,7 @@
 // any static file.
 
 import {
-  verifyPassword, createSession, readSession, sessionCookie, clearCookie,
+  getMembers, hashPassword, verifyPassword, createSession, readSession, sessionCookie, clearCookie,
   safeNext, redirect, json, error,
 } from "./auth.js";
 import { ensureSchema, getSessionSecret, loadUser, isAdmin, userTier } from "./db.js";
@@ -22,6 +22,8 @@ const ROUTES = [
   ["GET",    /^\/api\/logout$/,                               logout,           "public"],
   ["POST",   /^\/api\/logout$/,                               logout,           "public"],
   ["GET",    /^\/api\/me$/,                                   me,               "user"],
+  ["GET",    /^\/api\/status$/,                               status,           "public"],
+  ["POST",   /^\/api\/found$/,                                found,            "public"],
 
   ["GET",    /^\/api\/collection\/orgs$/,                     col.listOrgs,     "user"],
   ["GET",    /^\/api\/collection\/people$/,                   col.listPeople,   "user"],
@@ -103,6 +105,38 @@ async function login({ request, env }) {
 
 function logout() {
   return redirect("/", { "Set-Cookie": clearCookie() });
+}
+
+// Health of the installation, without revealing anything secret.
+async function status({ env }) {
+  if (!env.DB) return json({ db: false, users: 0, members: "absent" });
+  await ensureSchema(env);
+  const users = (await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first()).n;
+  const members = !env.MEMBERS ? "absent" : getMembers(env) ? "ok" : "unreadable";
+  return json({ db: true, users, members, needsFounding: users === 0 });
+}
+
+// First run only: while the roll is empty, the first visitor founds it by
+// creating the Director's account. Refused as soon as any user exists.
+async function found({ request, env }) {
+  if (!env.DB) return redirect("/login/?error=config");
+  await ensureSchema(env);
+  const users = (await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first()).n;
+  if (users > 0) return redirect("/login/?error=1");
+  const form = await request.formData();
+  const username = String(form.get("user") || "").trim().toLowerCase();
+  const name = String(form.get("name") || "").trim();
+  const pass = String(form.get("pass") || "");
+  const pass2 = String(form.get("pass2") || "");
+  if (!/^[a-z0-9._-]{2,40}$/.test(username) || !name || pass.length < 6 || pass !== pass2) {
+    return redirect("/login/?error=found");
+  }
+  const res = await env.DB.prepare(`
+    INSERT INTO users (username, name, role, division, tier_public, tier_secret, tier_government, tier4, pass_hash)
+    VALUES (?, ?, 'admin', 'government', 3, 3, 3, 1, ?)`).bind(username, name, await hashPassword(pass)).run();
+  const user = { id: res.meta.last_row_id, username };
+  const token = await createSession(user, getSessionSecret(env));
+  return redirect("/department/", { "Set-Cookie": sessionCookie(token) });
 }
 
 function me({ user }) {

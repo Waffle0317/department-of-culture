@@ -8,15 +8,26 @@ noindex: true
   <div class="login__card">
     <div class="login__stamp stamp">Office use<small>Mandate s.10</small></div>
     {% set id = "login" %}{% set class = "" %}{% include "partials/emblem.njk" %}
-    <h1 class="login__title">Personnel entrance</h1>
-    <div class="login__sub">Curators present their credentials</div>
+    <h1 class="login__title" data-login-title>Personnel entrance</h1>
+    <div class="login__sub" data-login-sub>Curators present their credentials</div>
     <div class="login__error" data-login-error hidden></div>
-    <form method="post" action="/api/login" autocomplete="off">
+
+    <form method="post" action="/api/login" autocomplete="off" data-login-form>
       <input type="hidden" name="next" value="/department/" data-login-next>
       <label class="field"><span>Name on the roll</span><input type="text" name="user" required autocapitalize="off" spellcheck="false"></label>
       <label class="field"><span>Word of passage</span><input type="password" name="pass" required></label>
       <button class="btn btn--red" type="submit" style="width:100%">Enter the Department</button>
     </form>
+
+    <form method="post" action="/api/found" autocomplete="off" data-found-form hidden>
+      <p class="login__found">The roll is empty. The first account founded here becomes the Director, with full access and the admin hub. This form disappears once the roll has a name on it.</p>
+      <label class="field"><span>Username (for signing in)</span><input type="text" name="user" required pattern="[a-zA-Z0-9._-]{2,40}" autocapitalize="off" spellcheck="false" value="director"></label>
+      <label class="field"><span>Name as it appears in the Department</span><input type="text" name="name" required maxlength="80" value="Wilhelm Denker"></label>
+      <label class="field"><span>Word of passage (at least 6 characters)</span><input type="password" name="pass" required minlength="6" autocomplete="new-password"></label>
+      <label class="field"><span>Repeat it</span><input type="password" name="pass2" required minlength="6" autocomplete="new-password"></label>
+      <button class="btn btn--red" type="submit" style="width:100%">Found the roll</button>
+    </form>
+
     <p class="login__foot">Access is recorded. Nothing beyond this door is disclosed to Council, Governor, courts or any other agency without the leave of the Office.</p>
   </div>
 </section>
