@@ -10,7 +10,7 @@ lead: A Curator's fault is judged in its heightened degree. Under §65.10 of the
 - Never disclose the office, an investigation, a source or the Collection without the Office's leave (Mandate s.10). For a Curator, disclosing the rolls, sources or records of the Department is hindering a spiritual inquiry in the first degree: a class I felony and forfeiture of office (§130.10).
 - Never warn anyone that they are under inquiry. That is itself a spiritual offence (§130.05).
 - Never state what the Emperor, the Lord Protector or the Doctrine requires; write down the question and send it to the Director.
-- Never arrest, search or seize on the Department's own authority. An unlawful raid is a class III felony under Amendment II.
+- Never arrest, search or seize on your own authority. The Department's power to do so runs only through the Court of Public Order, by referral (Mandate s.4). An unlawful raid is a class III felony under Amendment II.
 - Sign every entry and every paper with name and office (Third Work, Book Two, Part Eleven). A paper without a name is a paper without an owner.
 - Keep the manner of the Seditious Terminology Mandate yourself: proper titles, no first names on duty.
 - Report a spiritual felony you learn of within seven days (§160.00), and seditious words within two hours (Mandate on Seditious Terminology, art. V).

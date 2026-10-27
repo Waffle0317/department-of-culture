@@ -20,10 +20,10 @@ lead: Every matter follows one path, intake, Collection, assessment, then one of
   <div class="flow__box"><b>Outcome</b><p>One of the three below.</p></div>
   <div class="flow__box flow__box--out"><b>Keep and watch</b><p>Stays on the Collection. Nothing leaves the Department.</p></div>
   <div class="flow__box flow__box--out"><b>Refer to the Advocate</b><p>Spiritual offence or question of meaning. Form C-DOSSIER to the Director.</p></div>
-  <div class="flow__box flow__box--out"><b>Refer to the Office</b><p>Coercive measure needed. Form PA-DA-01 to the District Attorney, who compels NSB, ABI or NYPD on a judicial warrant.</p></div>
+  <div class="flow__box flow__box--out"><b>Refer for a coercive measure</b><p>Through the Court of Public Order, or by Form PA-DA-01 to the District Attorney, who compels NSB, ABI or NYPD on a judicial warrant.</p></div>
 </div>
 
-The Department itself only ever reaches the middle row; any measure of force sits with another agency, on a warrant.
+The Department itself only ever reaches the middle row; any measure of force goes by referral, through the Court or on a warrant.
 
 ## Questions of meaning
 
@@ -66,7 +66,12 @@ The Director reviews the file, drafts the indictment (Form PA-SPC-01), applies t
 
 ## Coercive measures
 
-No search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (Spiritual Penal Law §200.15; Constitution Amendment II). Where one is needed, the Department issues Form PA-DA-01 to the District Attorney, who is compelled under Home Rule Act s.10 to apply for the warrant and to order the NYPD, ABI or NSB to execute it. Protection, surveillance support or custody in a Title 70 matter is requested as a Tasking of the Security Forces, through the Advocate.
+The Department possesses the power of arrest, of search upon warrant and of seizure, but only via the Court of Public Order, and only by referral (Mandate s.4). No Curator takes any such measure on his own authority. Two roads exist:
+
+1. **The Court of Public Order.** The Court may summon, arrest, detain and censor within the Capital. Its process is executed by the Public Curators with the Advocate's personal guard, and every organ of the Capital must aid them (Court Mandate art. 3). The Curator acts on the Court's paper, never on his own.
+2. **The District Attorney.** No search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (Spiritual Penal Law §200.15; Constitution Amendment II). The Department issues Form PA-DA-01 to the District Attorney, who is compelled under Home Rule Act s.10 to apply for the warrant and to order the NYPD, ABI or NSB to execute it.
+
+Protection, surveillance support or custody in a Title 70 matter is requested as a Tasking of the Security Forces, through the Advocate.
 
 ## Disposition ladder (Seditious Terminology Mandate, art. IV)
 

@@ -4,7 +4,7 @@ kicker: Standing order · III
 lead: Four desks cover the whole field the mandate defines. Every Curator answers to the Advocate (s.9); the desks only divide the work.
 ---
 
-The Department of Culture is the corrective arm of the Public Advocacy (Proclamation of 12 October 1962). Its officers are the Public Curators, its register is the Collection, and its head is the Director of Culture, who answers to the Public Advocate through the Deputy Public Advocate.
+The Department of Culture is established within the Office of the Public Advocate (Mandate s.4) as the corrective arm of the Advocacy (Proclamation of 12 October 1962). Its officers are the Public Curators, appointed by the Advocate and answering to him alone; its register is the Collection; and its head is the Director of Culture, who answers to the Public Advocate through the Deputy Public Advocate.
 
 ## The four desks
 
