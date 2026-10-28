@@ -453,9 +453,43 @@
     openFile(id, d);
   }
 
+  // The card's header is drawn at once from what the chart already knows;
+  // the rest of the file follows when it arrives.
+  function openSkeleton(id) {
+    const k = state.byId.get(id);
+    if (!k || k.redacted) return false;
+    state.selected = id;
+    markSelected(id);
+    el.file.innerHTML = `
+      <div class="file">
+        <div class="file__top">
+          <div class="label label--red">Collection file · No. ${id}</div>
+          <button class="file__close" type="button" aria-label="Close file" data-close>×</button>
+        </div>
+        <div class="file__id">
+          <div class="file__portrait file__portrait--empty">${esc((k.name || "?").trim()[0].toUpperCase())}</div>
+          <div>
+            <div class="file__name">${esc(k.name)}</div>
+            <div class="file__rank">${esc(k.rank_name || k.rank_text || "Rank unknown")} · ${esc(state.org.name)}</div>
+            ${k.title ? `<div class="file__title">${esc(k.title)}</div>` : ""}
+          </div>
+        </div>
+        <p class="muted file__opening">Opening the file…</p>
+      </div>`;
+    el.file.hidden = false; el.body.classList.add("has-file");
+    el.file.scrollTop = 0;
+    $("[data-close]", el.file).addEventListener("click", closeFile);
+    return true;
+  }
+
   async function openFile(id, pre) {
     let d = pre;
-    if (!d) { try { d = await api("GET", `/api/collection/people/${id}`); } catch (e) { toast(e.message); return; } }
+    if (!d) {
+      const shown = openSkeleton(id);
+      try { d = await api("GET", `/api/collection/people/${id}`); }
+      catch (e) { toast(e.message); if (shown) closeFile(); return; }
+      if (state.selected !== id && shown) return; // the reader moved on meanwhile
+    }
     state.selected = id;
     markSelected(id);
     const p = d.person;

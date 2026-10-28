@@ -135,24 +135,30 @@ export async function getPerson({ env, user, params }) {
   const p = await visiblePerson(env, user, params[0]);
   if (!p) return error("No such file, or clearance insufficient", 404);
   const t = readTier(user, p);
-  const reports = (await env.DB.prepare(`
-    SELECT rp.id, rp.tier, rp.title, rp.severity, rp.body, rp.created_at, rp.author_id, u.name AS author_name
-    FROM reports rp LEFT JOIN users u ON u.id = rp.author_id
-    WHERE rp.person_id = ? AND rp.tier <= ? ORDER BY rp.created_at DESC, rp.id DESC`).bind(p.id, t).all()).results;
-  const withheld = (await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t).first()).n;
-  const superior = p.reports_to ? await stub(env, user, p.reports_to) : null;
-  const subs = (await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
-    FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
-    WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
-  const creator = p.created_by ? await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by).first() : null;
+  // Everything else the file shows, fetched in one round trip.
+  const [reportsQ, withheldQ, superiorQ, subsQ, creatorQ, incQ] = await env.DB.batch([
+    env.DB.prepare(`
+      SELECT rp.id, rp.tier, rp.title, rp.severity, rp.body, rp.created_at, rp.author_id, u.name AS author_name
+      FROM reports rp LEFT JOIN users u ON u.id = rp.author_id
+      WHERE rp.person_id = ? AND rp.tier <= ? ORDER BY rp.created_at DESC, rp.id DESC`).bind(p.id, t),
+    env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE person_id = ? AND tier > ?").bind(p.id, t),
+    env.DB.prepare(`${STUB_SQL} WHERE p.id = ?`).bind(p.reports_to || 0),
+    env.DB.prepare(`${STUB_SQL} WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id),
+    env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by || 0),
+    env.DB.prepare(`
+      SELECT ip.role, i.id, i.title, i.compartment, i.tier, i.severity, i.status, i.occurred_on, i.where_text, i.summary, i.officer_id, i.created_at, i.updated_at,
+             u.name AS officer_name, u.rank AS officer_rank, u.person_id AS officer_person_id
+      FROM incident_people ip JOIN incidents i ON i.id = ip.incident_id LEFT JOIN users u ON u.id = i.officer_id
+      WHERE ip.person_id = ? ORDER BY i.id DESC`).bind(p.id),
+  ]);
+  const reports = reportsQ.results;
+  const withheld = withheldQ.results[0].n;
+  const supRow = superiorQ.results[0];
+  const superior = supRow ? (stubOf(user, supRow) || { id: supRow.id, redacted: 1, bare: 1 }) : null;
+  const subs = subsQ.results.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
+  const creator = creatorQ.results[0] || null;
   // Incidents this person is attached to, each told at the reader's clearance.
-  const incRows = (await env.DB.prepare(`
-    SELECT ip.role, i.id, i.title, i.compartment, i.tier, i.severity, i.status, i.occurred_on, i.where_text, i.summary, i.officer_id, i.created_at, i.updated_at,
-           u.name AS officer_name, u.rank AS officer_rank, u.person_id AS officer_person_id
-    FROM incident_people ip JOIN incidents i ON i.id = ip.incident_id LEFT JOIN users u ON u.id = i.officer_id
-    WHERE ip.person_id = ? ORDER BY i.id DESC`).bind(p.id).all()).results;
-  const incidents = incRows.map((r) => { const st = incidentStub(user, r); return st ? { ...st, role: r.role } : null; }).filter(Boolean);
+  const incidents = incQ.results.map((r) => { const st = incidentStub(user, r); return st ? { ...st, role: r.role } : null; }).filter(Boolean);
   return json({
     person: { ...p, created_by_name: creator ? creator.name : null },
     reports, withheld, superior, subordinates: subs, incidents, readTier: t,
@@ -160,12 +166,10 @@ export async function getPerson({ env, user, params }) {
   });
 }
 
-async function stub(env, user, id) {
-  const e = await env.DB.prepare(`
-    SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
-    FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id WHERE p.id = ?`).bind(id).first();
-  return e ? (stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 }) : null;
-}
+// A person with what a stub needs: organization and rank.
+const STUB_SQL = `
+  SELECT p.id, p.name, p.title, p.tier, p.rank_text, p.division, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
+  FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id`;
 
 async function validatePersonBody(env, body) {
   const name = s(body.name, 120);
