@@ -3,6 +3,7 @@
     "title": "The Collection",
     "items": [
       { "label": "Dossiers and hierarchies", "url": "/department/collection/" },
+      { "label": "Incidents", "url": "/department/collection/#incidents" },
       { "label": "The People's Notes", "url": "/department/notes/" },
       { "label": "The Wire", "url": "/department/chat/", "badge": "wire" }
     ]

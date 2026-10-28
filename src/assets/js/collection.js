@@ -71,12 +71,11 @@
       b.addEventListener("click", () => selectOrg(o.slug));
       el.tabs.appendChild(b);
     }
-    const t = document.createElement("button");
-    t.className = "col__tab col__tab--inc"; t.type = "button"; t.setAttribute("role", "tab");
-    t.setAttribute("aria-selected", isIncTab() ? "true" : "false");
-    t.innerHTML = "Incidents<small>cases · every lane</small>";
-    t.addEventListener("click", () => selectOrg("incidents"));
-    el.tabs.appendChild(t);
+    // The sidebar carries the choice between dossiers and incidents.
+    const dossiers = document.querySelector('.dept__nav a[href="/department/collection/"]');
+    const incidents = document.querySelector('.dept__nav a[href="/department/collection/#incidents"]');
+    if (dossiers) { if (isIncTab()) dossiers.removeAttribute("aria-current"); else dossiers.setAttribute("aria-current", "page"); }
+    if (incidents) { if (isIncTab()) incidents.setAttribute("aria-current", "page"); else incidents.removeAttribute("aria-current"); }
   }
 
   async function selectOrg(slug, keepFile) {
