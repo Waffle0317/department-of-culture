@@ -244,19 +244,30 @@
         ? `${divs} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}`
         : `T${p.tier} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}${p.party_member === 1 ? " · Party" : ""}`;
       g.appendChild(mk("text", { class: "node__foot", x: 14, y: H - 9 }, foot));
-      if (state.selected === p.id) {
-        // Nibs: drag one onto another card to attach the two.
-        for (const [cx, cy] of [[W / 2, 0], [W, H / 2], [W / 2, H], [0, H / 2]]) {
-          const n = mk("circle", { class: "nib", cx, cy, r: 7 });
-          n.appendChild(mk("title", {}, "Drag onto another card to attach"));
-          g.appendChild(n);
-        }
-      }
+      if (state.selected === p.id) addNibs(g);
     } else {
       g.appendChild(mk("text", { class: "node__name", x: 14, y: 24 }, trunc(p.name, 24)));
       g.appendChild(mk("text", { class: "node__rank", x: 14, y: 42 }, trunc(`${p.rank_name || ""} · ${p.org_name}`, 34)));
     }
     return g;
+  }
+
+  // Nibs: drag one onto another card to attach the two. Only the open card has them.
+  function addNibs(g) {
+    for (const [cx, cy] of [[W / 2, 0], [W, H / 2], [W / 2, H], [0, H / 2]]) {
+      const n = mk("circle", { class: "nib", cx, cy, r: 7 });
+      n.appendChild(mk("title", {}, "Drag onto another card to attach"));
+      g.appendChild(n);
+    }
+  }
+  // Mark the open card without redrawing the chart.
+  function markSelected(id) {
+    el.nodes.querySelectorAll(".nib").forEach((n) => n.remove());
+    el.nodes.querySelectorAll(".node").forEach((n) => {
+      const on = id !== null && Number(n.dataset.id) === id;
+      n.classList.toggle("is-selected", on);
+      if (on && !n.classList.contains("node--ext") && !n.classList.contains("node--redacted")) addNibs(n);
+    });
   }
 
   /* ---------- pan, zoom, drag ---------- */
@@ -427,7 +438,7 @@
   /* ---------- file panel ---------- */
   function closeFile() {
     state.selected = null; el.file.hidden = true; el.file.innerHTML = ""; el.body.classList.remove("has-file");
-    if (!isIncTab() && state.people.length) render();
+    markSelected(null);
     if (state.incOpen !== null) { state.incOpen = null; if (isIncTab()) renderIncidents(); }
   }
 
@@ -446,7 +457,7 @@
     let d = pre;
     if (!d) { try { d = await api("GET", `/api/collection/people/${id}`); } catch (e) { toast(e.message); return; } }
     state.selected = id;
-    if (!isIncTab()) render();
+    markSelected(id);
     const p = d.person;
     const tierOpts = []; for (let t = p.tier; t <= 4; t++) tierOpts.push(`<option value="${t}">${TIER_LABEL[t]}</option>`);
     const stubHtml = (s, withTier) => s.bare
@@ -575,7 +586,6 @@
       renderReports(remembered);
       sortSel.addEventListener("change", () => { try { localStorage.setItem("doc_report_sort", sortSel.value); } catch {} renderReports(sortSel.value); });
     }
-    el.nodes.querySelectorAll(".node").forEach((n) => n.classList.toggle("is-selected", Number(n.dataset.id) === id));
   }
 
   /* ---------- new / edit dialog ---------- */
