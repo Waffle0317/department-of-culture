@@ -811,6 +811,7 @@
     else if (mode === "severity") list.sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9) || newest(a, b));
     else if (mode === "status") list.sort((a, b) => INC_STATUS_ORDER.indexOf(a.status) - INC_STATUS_ORDER.indexOf(b.status) || newest(a, b));
     else if (mode === "title") list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || "")));
+    else if (mode === "updated") list.sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")) || newest(a, b));
     else list.sort(newest);
     return list;
   }
@@ -828,7 +829,8 @@
       <div class="inc__head"><span class="report__sev">${SEV_LABEL[i.severity] || "Minor"}</span><span class="inc__title">${esc(i.title)}</span>${statusChip(i)}</div>
       <div class="inc__meta">${esc(fmtDay(i.occurred_on))}${i.where_text ? ` · ${esc(i.where_text)}` : ""} · ${esc(i.compartment)} · T${i.tier}</div>
       ${i.summary ? `<p class="inc__summary">${esc(i.summary)}</p>` : ""}
-      <div class="inc__foot"><span>${i.officer_name ? `Case officer · ${esc(i.officer_name)}` : "No case officer"}</span><span>${i.people_count} ${i.people_count === 1 ? "person" : "people"} · ${i.attachment_count} attached · ${i.link_count} linked</span></div>
+      <div class="inc__foot"><span>${i.officer_name ? `Case officer · ${esc(i.officer_name)}` : "No case officer"}</span><span>${i.note_count || 0} ${i.note_count === 1 ? "entry" : "entries"} · ${i.people_count} ${i.people_count === 1 ? "person" : "people"} · ${i.attachment_count} exhibits · ${i.link_count} linked</span></div>
+      <div class="inc__foot"><span>Last entry · ${fmtDate(i.updated_at)}</span></div>
     </button>`;
   }
 
@@ -877,25 +879,130 @@
     });
   }
 
+  /* ---------- @-names in case entries ---------- */
+  // Entries carry the Wire's tokens: @[Name](p:<file id>) or @[Name](u:<member id>).
+  const TOKEN = /@\[([^\]\n]{1,80})\]\((u|p):(\d+)\)/g;
+  function noteHtml(body) {
+    const text = String(body || "");
+    let out = "", last = 0;
+    for (const m of text.matchAll(TOKEN)) {
+      out += esc(text.slice(last, m.index));
+      const [, name, kind, id] = m;
+      let pid = Number(id);
+      if (kind === "u") { const u = (state.members || []).find((x) => x.id === Number(id)); pid = u && u.person_id ? u.person_id : null; }
+      out += pid ? `<a href="#" class="mention" data-open="${pid}">@${esc(name)}</a>` : `<span class="mention mention--plain">@${esc(name)}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+  }
+  // The same entry as it reads in a textarea: tokens shown as @Name, remembered so they go back as tokens.
+  function plainOf(body) {
+    const picked = new Map();
+    const text = String(body || "").replace(TOKEN, (all, name) => { picked.set(name, all); return `@${name}`; });
+    return { text, picked };
+  }
+
+  // @-name completion on a textarea, as on the Wire: members of the roll first, then files.
+  function mentionable(ta, menu, initial) {
+    const picked = new Map(initial || []);
+    let open = null, timer = null, seq = 0;
+    const at = () => {
+      const v = ta.value, c = ta.selectionStart;
+      const m = v.slice(0, c).match(/(?:^|\s)@([^\s@]{0,40}(?: [^\s@]{0,40})?)$/);
+      return m ? { q: m[1], start: c - m[1].length - 1, end: c } : null;
+    };
+    const hide = () => { open = null; menu.hidden = true; menu.innerHTML = ""; };
+    const show = (items, a) => {
+      if (!items.length) { hide(); return; }
+      open = { items, at: a, index: 0 };
+      menu.innerHTML = items.map((it, n) => `<button type="button" data-n="${n}" class="${n === 0 ? "is-active" : ""}"><b>@${esc(it.name)}</b><small>${esc(it.sub)}</small></button>`).join("");
+      menu.hidden = false;
+      menu.querySelectorAll("[data-n]").forEach((b) => b.addEventListener("mousedown", (e) => { e.preventDefault(); pick(Number(b.dataset.n)); }));
+    };
+    const pick = (n) => {
+      const m = open; if (!m || !m.items[n]) return;
+      const it = m.items[n], v = ta.value;
+      const before = v.slice(0, m.at.start), after = v.slice(m.at.end);
+      ta.value = `${before}@${it.name} ${after}`;
+      const pos = before.length + it.name.length + 2;
+      ta.setSelectionRange(pos, pos);
+      picked.set(it.name, it.token);
+      hide(); ta.focus();
+    };
+    async function update() {
+      const a = at(); if (!a) { hide(); return; }
+      const q = a.q.toLowerCase();
+      const list = await members();
+      const items = list.filter((m) => !q || m.name.toLowerCase().includes(q)).slice(0, 8)
+        .map((m) => ({ name: m.name, sub: m.rank || "Member of the Department", token: `@[${m.name}](u:${m.id})` }));
+      const my = ++seq;
+      show(items, a);
+      if (q.length >= 2) {
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          try {
+            const d = await api("GET", `/api/collection/search?q=${encodeURIComponent(a.q)}`);
+            if (my !== seq) return;
+            const files = d.results.slice(0, 6).map((p) => ({ name: p.name, sub: `${p.rank_name || ""} · ${p.org_name} · file`, token: `@[${p.name}](p:${p.id})` }));
+            show([...items, ...files.filter((f) => !items.some((i) => i.token === f.token))], a);
+          } catch {}
+        }, 200);
+      }
+    }
+    ta.addEventListener("input", update);
+    ta.addEventListener("click", update);
+    ta.addEventListener("blur", () => setTimeout(hide, 150));
+    ta.addEventListener("keydown", (e) => {
+      const m = open; if (!m) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        m.index = (m.index + (e.key === "ArrowDown" ? 1 : m.items.length - 1)) % m.items.length;
+        menu.querySelectorAll("[data-n]").forEach((b, n) => b.classList.toggle("is-active", n === m.index));
+      } else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pick(m.index); }
+      else if (e.key === "Escape") { e.preventDefault(); hide(); }
+    });
+    return {
+      // Names picked from the menu go back as tokens; anything typed by hand stays plain text.
+      withTokens(text) { for (const n of [...picked.keys()].sort((a, b) => b.length - a.length)) text = text.split(`@${n}`).join(picked.get(n)); return text; },
+      clear() { picked.clear(); hide(); },
+    };
+  }
+
+  /* ---------- the open incident ---------- */
   async function openIncident(id) {
     let d;
-    try { d = await api("GET", `/api/collection/incidents/${id}`); } catch (e) { toast(e.message); return; }
+    try { [d] = await Promise.all([api("GET", `/api/collection/incidents/${id}`), members()]); } catch (e) { toast(e.message); return; }
     if (!isIncTab()) { state.incOpen = id; await selectOrg("incidents", true); }
     state.incOpen = id;
     location.hash = `incidents/${id}`;
     renderIncidents();
     const i = d.incident;
-    const mine = i.officer_id === d.can.me;
     const personHtml = (s) => s.bare ? `<span class="chip chip--red">Confidential</span>`
       : s.redacted ? `${esc(s.name)}${s.rank_name ? ` <span class="muted">· ${esc(s.rank_name)}</span>` : ""} <span class="chip chip--red">Confidential · Tier ${s.tier}</span>`
       : `<a href="#" class="mention" data-open="${s.id}">@${esc(s.name)}</a> <span class="muted">· ${esc(s.rank_name || "")} ${esc(s.org_name)}</span>`;
     const officerHtml = !i.officer_id ? "—"
       : (i.officer_person_id ? `<a href="#" class="mention" data-open="${i.officer_person_id}">@${esc(i.officer_name)}</a>` : esc(i.officer_name)) + (i.officer_rank ? ` <span class="muted">· ${esc(i.officer_rank)}</span>` : "");
-    const attHtml = (a) => {
-      const del = (d.can.admin || a.added_by === d.can.me || mine) ? `<button class="report__del" type="button" data-delatt="${a.id}">remove</button>` : "";
-      if (a.kind === "image") return `<figure class="att att--image"><a href="/api/collection/attachments/${a.id}/image" target="_blank" rel="noopener"><img src="/api/collection/attachments/${a.id}/image" alt="${esc(a.title || "")}" loading="lazy"></a><figcaption>${esc(a.title || "Image")} <span class="muted">· ${esc(a.added_by_name || "")}</span> ${del}</figcaption></figure>`;
-      return `<div class="att att--${a.kind}">${a.kind === "video" ? videoEmbed(a.url) : ""}<div class="att__line"><span class="chip">${a.kind === "video" ? "Video" : "Link"}</span><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.title || a.url)}</a><span class="muted">· ${esc(a.added_by_name || "")}</span> ${del}</div></div>`;
+    const whoHtml = (name, pid) => pid ? `<a href="#" class="mention" data-open="${pid}">@${esc(name)}</a>` : esc(name || "Unknown");
+    const noteOf = (nid) => d.notes.find((n) => n.id === nid);
+    // One exhibit. In the log, images are thumbnails; in the exhibits list they are shown in full, with the entry they came with.
+    const attHtml = (a, inLog) => {
+      const del = a.can_delete ? `<button class="report__del" type="button" data-delatt="${a.id}">remove</button>` : "";
+      const from = !inLog && a.note_id ? ` <span class="muted">· with the entry of ${fmtDate((noteOf(a.note_id) || {}).created_at || a.created_at)}</span>` : "";
+      if (a.kind === "image") {
+        return `<figure class="att att--image ${inLog ? "att--thumb" : ""}"><a href="/api/collection/attachments/${a.id}/image" target="_blank" rel="noopener" title="${esc(a.title || "Open the image")}"><img src="/api/collection/attachments/${a.id}/image" alt="${esc(a.title || "")}" loading="lazy"></a>
+          <figcaption>${esc(a.title || "Image")}${inLog ? "" : ` <span class="muted">· ${esc(a.added_by_name || "")}</span>${from}`} ${del}</figcaption></figure>`;
+      }
+      return `<div class="att att--${a.kind}">${a.kind === "video" ? videoEmbed(a.url) : ""}<div class="att__line"><span class="chip">${a.kind === "video" ? "Video" : "Link"}</span><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.title || a.url)}</a>${inLog ? "" : `<span class="muted">· ${esc(a.added_by_name || "")}</span>${from}`} ${del}</div></div>`;
     };
+    const entryHtml = (n) => `<article class="entry" data-note="${n.id}">
+        <header class="entry__head">
+          <span class="entry__who">${whoHtml(n.author_name, n.author_person_id)}${n.author_rank ? ` <span class="muted">· ${esc(n.author_rank)}</span>` : ""}</span>
+          <span class="entry__when">${fmtDate(n.created_at)}${n.updated_at !== n.created_at ? ` · amended` : ""}</span>
+          ${n.can_edit ? `<span class="entry__tools">${n.body ? `<button class="report__del" type="button" data-editnote="${n.id}">amend</button>` : ""}<button class="report__del" type="button" data-delnote="${n.id}">remove</button></span>` : ""}
+        </header>
+        ${n.body ? `<div class="entry__body">${noteHtml(n.body)}</div>` : ""}
+        ${n.attachments.length ? `<div class="entry__atts">${n.attachments.map((a) => attHtml(a, true)).join("")}</div>` : ""}
+      </article>`;
     el.file.innerHTML = `
       <div class="file">
         <div class="file__top">
@@ -917,12 +1024,25 @@
           <dt>Last entry</dt><dd>${fmtDate(i.updated_at)}</dd>
         </dl>
         ${i.summary ? `<p class="file__summary">${esc(i.summary)}</p>` : ""}
-        <h3>Account</h3>
-        <div class="file__info">${i.body ? esc(i.body) : '<span class="muted">Nothing recorded yet.</span>'}</div>
+        <h3>Opening account</h3>
+        <div class="file__info">${i.body ? esc(i.body) : '<span class="muted">Nothing recorded at opening. The case log below carries the file forward.</span>'}</div>
         <div class="file__actions">
-          <button class="btn btn--ghost btn--sm" type="button" data-edit>Amend</button>
-          ${d.can.delete ? `<button class="btn btn--ghost btn--sm" type="button" data-delete style="border-color:var(--red);color:var(--red)">Destroy incident</button>` : ""}
+          <button class="btn btn--ghost btn--sm" type="button" data-edit>Amend the header</button>
+          <label class="inc__status"><span class="muted">Status</span><select data-status>${INC_STATUS_ORDER.map((s) => `<option value="${s}" ${s === i.status ? "selected" : ""}>${INC_STATUS[s]}</option>`).join("")}</select></label>
+          ${d.can.delete ? `<button class="btn btn--ghost btn--sm" type="button" data-delete style="border-color:var(--red);color:var(--red);margin-left:auto">Destroy</button>` : ""}
         </div>
+        <h3>Case log (${d.notes.length})</h3>
+        <p class="muted inc__loghint">The file is built on as things come to light. Each entry is dated and signed; images and links added with an entry stay with it.</p>
+        <div class="entries">${d.notes.map(entryHtml).join("") || '<p class="muted inc__noentries">No entries yet. Write the first below.</p>'}</div>
+        <form class="inc__compose" data-newnote>
+          <div class="wire__composebox"><div class="wire__mentions" data-menu hidden></div><textarea name="body" rows="3" maxlength="10000" placeholder="Add to the file: what has come to light, who said what, what was found… (@ to name someone)"></textarea></div>
+          <div class="inc__pending" data-pending hidden></div>
+          <div class="row">
+            <label class="btn btn--ghost btn--sm inc__pick">+ Images<input type="file" name="files" accept="image/*" multiple hidden></label>
+            <input type="url" name="url" class="grow" placeholder="Video or web address to go with it (optional)">
+            <button class="btn btn--red btn--sm" type="submit">Add entry</button>
+          </div>
+        </form>
         <h3>People (${d.people.length})</h3>
         <ul class="inc__people">${d.people.map((s) => `<li>${personHtml(s)} <span class="chip">${ROLE_LABEL[s.role] || esc(s.role)}</span>${s.note ? ` <span class="muted">${esc(s.note)}</span>` : ""}<button class="report__del" type="button" data-detach="${s.id}">remove</button></li>`).join("") || '<li class="muted">No one attached yet.</li>'}</ul>
         <form class="inc__attach" data-attach>
@@ -935,8 +1055,8 @@
         <h3>Linked incidents (${d.related.length})</h3>
         <ul class="inc__links">${d.related.map((r) => `<li>${incLineHtml(r)}${!r.redacted ? `<button class="report__del" type="button" data-unlink="${r.id}">unlink</button>` : ""}</li>`).join("") || '<li class="muted">None linked.</li>'}</ul>
         <div class="inc__attach"><div class="pf__sup"><input type="search" data-isearch placeholder="Link an incident: search by title…" autocomplete="off"><div class="pf__results" data-iresults hidden></div></div></div>
-        <h3>Attachments (${d.attachments.length})</h3>
-        <div class="inc__atts">${d.attachments.map(attHtml).join("") || '<p class="muted" style="font-size:.95rem">Nothing attached yet.</p>'}</div>
+        <h3>Exhibits (${d.attachments.length})</h3>
+        <div class="inc__atts">${d.attachments.map((a) => attHtml(a, false)).join("") || '<p class="muted" style="font-size:.95rem">Nothing on file yet. Add images and links with a log entry above, or on their own here.</p>'}</div>
         <form class="inc__attach" data-newatt>
           <div class="row">
             <select name="kind"><option value="image">Image</option><option value="video">Video link</option><option value="link">Link or paper</option></select>
@@ -945,7 +1065,7 @@
           <div class="row">
             <input type="file" name="file" accept="image/*" data-attfile>
             <input type="url" name="url" class="grow" placeholder="https://…" data-atturl hidden>
-            <button class="btn btn--red btn--sm" type="submit">Add</button>
+            <button class="btn btn--ghost btn--sm" type="submit">Add exhibit</button>
           </div>
         </form>
       </div>`;
@@ -953,15 +1073,21 @@
     el.file.scrollTop = 0;
 
     const reopen = async () => { await openIncident(i.id); await loadIncidents(); };
+    const wireOpens = (root) => {
+      root.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openPerson(Number(a.dataset.open), true); }));
+      root.querySelectorAll("[data-openinc]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openIncident(Number(a.dataset.openinc)); }));
+    };
+    wireOpens(el.file);
     $("[data-close]", el.file).addEventListener("click", closeFile);
     $("[data-edit]", el.file).addEventListener("click", () => openIncDialog(i));
+    $("[data-status]", el.file).addEventListener("change", async (e) => {
+      try { await api("PUT", `/api/collection/incidents/${i.id}/status`, { status: e.target.value }); toast(`Marked ${INC_STATUS[e.target.value].toLowerCase()}`); await reopen(); } catch (err) { toast(err.message); }
+    });
     const del = $("[data-delete]", el.file);
     if (del) del.addEventListener("click", async () => {
       if (!confirm(`Destroy the incident "${i.title}" with everything attached to it? This cannot be undone.`)) return;
       try { await api("DELETE", `/api/collection/incidents/${i.id}`); closeFile(); await loadIncidents(); toast("Incident destroyed"); } catch (e) { toast(e.message); }
     });
-    el.file.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openPerson(Number(a.dataset.open), true); }));
-    el.file.querySelectorAll("[data-openinc]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openIncident(Number(a.dataset.openinc)); }));
     el.file.querySelectorAll("[data-detach]").forEach((b) => b.addEventListener("click", async () => {
       try { await api("DELETE", `/api/collection/incidents/${i.id}/people/${b.dataset.detach}`); await reopen(); } catch (e) { toast(e.message); }
     }));
@@ -969,10 +1095,65 @@
       try { await api("DELETE", `/api/collection/incidents/${i.id}/links/${b.dataset.unlink}`); await reopen(); } catch (e) { toast(e.message); }
     }));
     el.file.querySelectorAll("[data-delatt]").forEach((b) => b.addEventListener("click", async () => {
-      if (!confirm("Remove this attachment?")) return;
+      if (!confirm("Remove this exhibit?")) return;
       try { await api("DELETE", `/api/collection/attachments/${b.dataset.delatt}`); await reopen(); } catch (e) { toast(e.message); }
     }));
 
+    /* the case log */
+    el.file.querySelectorAll("[data-delnote]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Remove this entry, with anything attached to it?")) return;
+      try { await api("DELETE", `/api/collection/incidents/${i.id}/notes/${b.dataset.delnote}`); await reopen(); } catch (e) { toast(e.message); }
+    }));
+    el.file.querySelectorAll("[data-editnote]").forEach((b) => b.addEventListener("click", () => {
+      const n = noteOf(Number(b.dataset.editnote)); if (!n) return;
+      const art = el.file.querySelector(`[data-note="${n.id}"]`);
+      const bodyEl = $(".entry__body", art); if (!bodyEl || art.querySelector("form")) return;
+      const { text, picked } = plainOf(n.body);
+      const f = document.createElement("form");
+      f.className = "entry__edit";
+      f.innerHTML = `<div class="wire__composebox"><div class="wire__mentions" data-menu hidden></div><textarea name="body" rows="4" maxlength="10000"></textarea></div>
+        <div class="row"><button class="btn btn--red btn--sm" type="submit">Save</button><button class="btn btn--ghost btn--sm" type="button" data-cancel>Cancel</button></div>`;
+      f.body.value = text;
+      bodyEl.replaceWith(f);
+      const men = mentionable(f.body, $("[data-menu]", f), picked);
+      $("[data-cancel]", f).addEventListener("click", () => { f.replaceWith(bodyEl); });
+      f.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try { await api("PUT", `/api/collection/incidents/${i.id}/notes/${n.id}`, { body: men.withTokens(f.body.value.trim()) }); await reopen(); } catch (err) { toast(err.message); }
+      });
+      f.body.focus();
+    }));
+
+    const nn = $("[data-newnote]", el.file);
+    const men = mentionable(nn.body, $("[data-menu]", nn));
+    const pending = [];
+    const pendingEl = $("[data-pending]", nn);
+    const drawPending = () => {
+      pendingEl.hidden = !pending.length;
+      pendingEl.innerHTML = pending.map((p, n) => `<span class="inc__thumb"><img src="${p.data}" alt=""><input type="text" maxlength="140" placeholder="Caption" value="${esc(p.title)}" data-cap="${n}"><button type="button" data-drop="${n}" aria-label="Drop this image">×</button></span>`).join("");
+      pendingEl.querySelectorAll("[data-drop]").forEach((b) => b.addEventListener("click", () => { pending.splice(Number(b.dataset.drop), 1); drawPending(); }));
+      pendingEl.querySelectorAll("[data-cap]").forEach((inp) => inp.addEventListener("input", () => { pending[Number(inp.dataset.cap)].title = inp.value; }));
+    };
+    nn.files.addEventListener("change", async () => {
+      for (const f of Array.from(nn.files.files).slice(0, 6 - pending.length)) {
+        try { pending.push({ title: "", data: await shrinkImage(f, 1600, 0.85) }); } catch { toast(`Could not read ${f.name}`); }
+      }
+      nn.files.value = "";
+      drawPending();
+    });
+    nn.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = men.withTokens(nn.body.value.trim());
+      const url = nn.url.value.trim();
+      const attachments = pending.map((p) => ({ kind: "image", title: p.title.trim(), data: p.data }));
+      if (url) attachments.push({ kind: videoEmbed(url) ? "video" : "link", url });
+      if (!text && !attachments.length) { toast("Write something, or attach something, first"); return; }
+      const btn = $("button[type=submit]", nn); btn.disabled = true;
+      try { await api("POST", `/api/collection/incidents/${i.id}/notes`, { body: text, attachments }); men.clear(); await reopen(); toast("Entered on the file"); }
+      catch (err) { toast(err.message); btn.disabled = false; }
+    });
+
+    /* people, links, exhibits */
     const attach = $("[data-attach]", el.file);
     attach.addEventListener("submit", (e) => e.preventDefault());
     searchBox($("[data-psearch]", el.file), $("[data-presults]", el.file),

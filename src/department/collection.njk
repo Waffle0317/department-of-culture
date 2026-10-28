@@ -43,11 +43,12 @@ app: true
         <div class="inc__bar">
           <div>
             <div class="label label--red">Incidents</div>
-            <p class="inc__lead">Events that involve more than one person. Each is filed in a compartment at a tier, like a person's file; the case officer always reads their own case. Every name on an incident opens that person's card.</p>
+            <p class="inc__lead">Events that involve more than one person. An incident is opened once and built on as things come to light: open it to add dated entries, images, video and papers to its case log. Each is filed in a compartment at a tier, like a person's file; the case officer always reads their own case. Every name on an incident opens that person's card.</p>
           </div>
           <label class="inc__sort"><span class="label">Sort</span>
             <select id="incSort">
               <option value="newest">Newest first</option>
+              <option value="updated">Latest entry</option>
               <option value="oldest">Oldest first</option>
               <option value="occurred">Date of incident</option>
               <option value="severity">By severity</option>
@@ -146,7 +147,7 @@ app: true
         <label class="field"><span>Filed at tier</span><select name="tier" id="ifTier"></select></label>
         <label class="field pf__span2"><span>Main case officer</span><select name="officer_id" id="ifOfficer"><option value="">— none assigned —</option></select></label>
         <label class="field pf__span2"><span>Summary</span><textarea name="summary" rows="2" maxlength="600" placeholder="One or two lines: what happened."></textarea></label>
-        <label class="field pf__span2"><span>Full account and supporting information</span><textarea name="body" rows="7" maxlength="30000" placeholder="Sequence of events, who was present, what was said, what was found. People, images, video links and papers are attached once the incident is open."></textarea></label>
+        <label class="field pf__span2"><span>Opening account</span><textarea name="body" rows="6" maxlength="30000" placeholder="What is known at opening: sequence of events, who was present, what was said, what was found. Everything that comes to light afterwards goes in the case log once the incident is open, with images, video links and papers."></textarea></label>
       </div>
       <div class="pf__error" id="ifError" hidden></div>
       <footer class="pf__foot">

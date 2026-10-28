@@ -150,6 +150,15 @@ CREATE TABLE IF NOT EXISTS attachments (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS attachments_incident ON attachments(incident_id);
+CREATE TABLE IF NOT EXISTS incident_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  body TEXT NOT NULL DEFAULT '',
+  author_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS incident_notes_incident ON incident_notes(incident_id);
 `;
 
 let ready = null;
@@ -195,6 +204,8 @@ async function setup(env) {
   const rcols = (await db.prepare("PRAGMA table_info(reports)").all()).results.map((c) => c.name);
   if (!rcols.includes("title")) await db.exec("ALTER TABLE reports ADD COLUMN title TEXT");
   if (!rcols.includes("severity")) await db.exec("ALTER TABLE reports ADD COLUMN severity TEXT NOT NULL DEFAULT 'minor'");
+  const acols = (await db.prepare("PRAGMA table_info(attachments)").all()).results.map((c) => c.name);
+  if (!acols.includes("note_id")) await db.exec("ALTER TABLE attachments ADD COLUMN note_id INTEGER");
 
   const orgCount = (await db.prepare("SELECT COUNT(*) AS n FROM organizations").first()).n;
   if (orgCount === 0) {

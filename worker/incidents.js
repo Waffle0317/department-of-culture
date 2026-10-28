@@ -1,8 +1,12 @@
 // Incidents: events that involve several people. An incident is filed in a
 // compartment at a tier, like a person's file, and the case officer always
-// reads their own case. People on the Collection are attached with a role,
-// incidents link to one another, and images, video links and papers are
-// kept with the case. Images are shrunk in the browser and stored here.
+// reads their own case. An incident is opened once and then built on: the
+// case log holds dated entries from anyone who can read the case, each with
+// its own images and links; people on the Collection are attached with a
+// role; incidents link to one another; images, video links and papers are
+// kept with the case as exhibits. Images are shrunk in the browser and
+// stored here. Entries may name people with the Wire's @-tokens,
+// `@[Name](p:<person id>)` or `@[Name](u:<user id>)`.
 
 import { json, error } from "./auth.js";
 import { isAdmin, incidentAccess, incidentStub } from "./db.js";
@@ -14,8 +18,10 @@ const ROLES = ["subject", "witness", "informant", "complainant", "officer", "oth
 const KINDS = ["image", "video", "link"];
 const COMPARTMENTS = ["public", "secret", "government"];
 const MAX_IMAGE = 1_400_000; // characters of data URL (~1 MB image)
+const MAX_PER_ENTRY = 6;     // attachments on one log entry
 const INC_COLS = "i.id, i.title, i.compartment, i.tier, i.severity, i.status, i.occurred_on, i.where_text, i.summary, i.body, i.officer_id, i.created_by, i.created_at, i.updated_at";
 const OFFICER = "u.name AS officer_name, u.rank AS officer_rank, u.person_id AS officer_person_id";
+const ATT_COLS = "a.id, a.incident_id, a.note_id, a.kind, a.title, a.url, a.added_by, a.created_at, u.name AS added_by_name";
 
 async function readJson(request) { try { return await request.json(); } catch { return null; } }
 function s(v, max = 2000) {
@@ -32,9 +38,11 @@ export async function visibleIncident(env, user, id) {
   const inc = await loadIncident(env, id);
   return inc && incidentAccess(user, inc) === "full" ? inc : null;
 }
-async function touch(env, id) {
-  await env.DB.prepare("UPDATE incidents SET updated_at = datetime('now') WHERE id = ?").bind(id).run();
-}
+const touchStmt = (env, id) => env.DB.prepare("UPDATE incidents SET updated_at = datetime('now') WHERE id = ?").bind(id);
+async function touch(env, id) { await touchStmt(env, id).run(); }
+
+// Who may change or remove something on a case: whoever wrote it, the case officer, or an admin.
+const mayEdit = (user, inc, ownerId) => isAdmin(user) || ownerId === user.id || inc.officer_id === user.id;
 
 /* ---------- list and view ---------- */
 
@@ -44,34 +52,40 @@ export async function listIncidents({ env, user, url }) {
     SELECT ${INC_COLS}, ${OFFICER},
       (SELECT COUNT(*) FROM incident_people ip WHERE ip.incident_id = i.id) AS people_count,
       (SELECT COUNT(*) FROM attachments at WHERE at.incident_id = i.id) AS attachment_count,
-      (SELECT COUNT(*) FROM incident_links il WHERE il.a = i.id OR il.b = i.id) AS link_count
+      (SELECT COUNT(*) FROM incident_links il WHERE il.a = i.id OR il.b = i.id) AS link_count,
+      (SELECT COUNT(*) FROM incident_notes n WHERE n.incident_id = i.id) AS note_count
     FROM incidents i LEFT JOIN users u ON u.id = i.officer_id
     ${q ? "WHERE i.title LIKE ?" : ""} ORDER BY i.id DESC`).bind(...(q ? [`%${q}%`] : [])).all()).results;
-  const incidents = rows.map((r) => incidentStub(user, r, { people_count: r.people_count, attachment_count: r.attachment_count, link_count: r.link_count })).filter(Boolean);
+  const incidents = rows.map((r) => incidentStub(user, r, { people_count: r.people_count, attachment_count: r.attachment_count, link_count: r.link_count, note_count: r.note_count })).filter(Boolean);
   return json({ incidents });
 }
 
 export async function getIncident({ env, user, params }) {
   const inc = await visibleIncident(env, user, params[0]);
   if (!inc) return error("No such incident, or clearance insufficient", 404);
-  const people = (await env.DB.prepare(`
-    SELECT ip.role, ip.note, p.id, p.name, p.title, p.tier, p.rank_text, p.division,
-           o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
-    FROM incident_people ip JOIN people p ON p.id = ip.person_id JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
-    WHERE ip.incident_id = ? ORDER BY ip.rowid`).bind(inc.id).all()).results
-    .map((e) => ({ ...(stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 }), role: e.role, note: e.note }));
-  const rel = (await env.DB.prepare(`
-    SELECT ${INC_COLS}, ${OFFICER}
-    FROM incident_links il JOIN incidents i ON i.id = CASE WHEN il.a = ? THEN il.b ELSE il.a END
-    LEFT JOIN users u ON u.id = i.officer_id
-    WHERE il.a = ? OR il.b = ? ORDER BY i.id DESC`).bind(inc.id, inc.id, inc.id).all()).results;
-  const related = rel.map((r) => incidentStub(user, r)).filter(Boolean);
-  const attachments = (await env.DB.prepare(`
-    SELECT a.id, a.kind, a.title, a.url, a.added_by, a.created_at, u.name AS added_by_name
-    FROM attachments a LEFT JOIN users u ON u.id = a.added_by WHERE a.incident_id = ? ORDER BY a.id`).bind(inc.id).all()).results;
+  const [peopleQ, relQ, attQ, notesQ] = await env.DB.batch([
+    env.DB.prepare(`
+      SELECT ip.role, ip.note, p.id, p.name, p.title, p.tier, p.rank_text, p.division,
+             o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name
+      FROM incident_people ip JOIN people p ON p.id = ip.person_id JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
+      WHERE ip.incident_id = ? ORDER BY ip.rowid`).bind(inc.id),
+    env.DB.prepare(`
+      SELECT ${INC_COLS}, ${OFFICER}
+      FROM incident_links il JOIN incidents i ON i.id = CASE WHEN il.a = ? THEN il.b ELSE il.a END
+      LEFT JOIN users u ON u.id = i.officer_id
+      WHERE il.a = ? OR il.b = ? ORDER BY i.id DESC`).bind(inc.id, inc.id, inc.id),
+    env.DB.prepare(`SELECT ${ATT_COLS} FROM attachments a LEFT JOIN users u ON u.id = a.added_by WHERE a.incident_id = ? ORDER BY a.id`).bind(inc.id),
+    env.DB.prepare(`
+      SELECT n.id, n.body, n.author_id, n.created_at, n.updated_at, u.name AS author_name, u.rank AS author_rank, u.person_id AS author_person_id
+      FROM incident_notes n LEFT JOIN users u ON u.id = n.author_id WHERE n.incident_id = ? ORDER BY n.id`).bind(inc.id),
+  ]);
+  const people = peopleQ.results.map((e) => ({ ...(stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 }), role: e.role, note: e.note }));
+  const related = relQ.results.map((r) => incidentStub(user, r)).filter(Boolean);
+  const attachments = attQ.results.map((a) => ({ ...a, can_delete: mayEdit(user, inc, a.added_by) }));
+  const notes = notesQ.results.map((n) => ({ ...n, can_edit: mayEdit(user, inc, n.author_id), attachments: attachments.filter((a) => a.note_id === n.id) }));
   return json({
-    incident: inc, people, related, attachments,
-    can: { edit: true, delete: isAdmin(user) || inc.created_by === user.id || inc.officer_id === user.id, admin: isAdmin(user), me: user.id },
+    incident: inc, people, related, attachments, notes,
+    can: { edit: true, delete: mayEdit(user, inc, inc.created_by), admin: isAdmin(user), me: user.id },
   });
 }
 
@@ -124,15 +138,81 @@ export async function updateIncident({ env, user, request, params }) {
   return json({ id: inc.id, visible: !!(await visibleIncident(env, user, inc.id)) });
 }
 
+// A quick change of status alone, from the open case: "closed", "referred" and so on.
+export async function setStatus({ env, user, request, params }) {
+  const inc = await visibleIncident(env, user, params[0]);
+  if (!inc) return error("No such incident, or clearance insufficient", 404);
+  const body = await readJson(request);
+  if (!body || !STATUSES.includes(body.status)) return error("Bad request");
+  await env.DB.prepare("UPDATE incidents SET status = ?, updated_at = datetime('now') WHERE id = ?").bind(body.status, inc.id).run();
+  return json({ ok: true, status: body.status });
+}
+
 export async function deleteIncident({ env, user, params }) {
   const inc = await visibleIncident(env, user, params[0]);
   if (!inc) return error("No such incident, or clearance insufficient", 404);
-  if (!isAdmin(user) && inc.created_by !== user.id && inc.officer_id !== user.id) return error("Only the case officer, whoever opened it, or an admin may destroy an incident", 403);
+  if (!mayEdit(user, inc, inc.created_by)) return error("Only the case officer, whoever opened it, or an admin may destroy an incident", 403);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM attachments WHERE incident_id = ?").bind(inc.id),
+    env.DB.prepare("DELETE FROM incident_notes WHERE incident_id = ?").bind(inc.id),
     env.DB.prepare("DELETE FROM incident_people WHERE incident_id = ?").bind(inc.id),
     env.DB.prepare("DELETE FROM incident_links WHERE a = ? OR b = ?").bind(inc.id, inc.id),
     env.DB.prepare("DELETE FROM incidents WHERE id = ?").bind(inc.id),
+  ]);
+  return json({ ok: true });
+}
+
+/* ---------- the case log ---------- */
+
+// One entry: a dated note from a reader of the case, with any images and
+// links that came with it. Sent as {body, attachments: [{kind, title, data | url}]}.
+export async function addNote({ env, user, request, params }) {
+  const inc = await visibleIncident(env, user, params[0]);
+  if (!inc) return error("No such incident, or clearance insufficient", 404);
+  const body = await readJson(request);
+  if (!body) return error("Bad request");
+  const text = s(body.body, 10000);
+  const atts = Array.isArray(body.attachments) ? body.attachments.slice(0, MAX_PER_ENTRY) : [];
+  if (!text && !atts.length) return error("Write something, or attach something, before adding to the file");
+  const checked = [];
+  for (const a of atts) { const r = checkAttachment(a); if (r.err) return error(r.err); checked.push(r.ok); }
+  const res = await env.DB.prepare("INSERT INTO incident_notes (incident_id, body, author_id) VALUES (?, ?, ?)").bind(inc.id, text || "", user.id).run();
+  const id = res.meta.last_row_id;
+  await env.DB.batch([
+    ...checked.map((a) => env.DB.prepare("INSERT INTO attachments (incident_id, note_id, kind, title, url, data, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(inc.id, id, a.kind, a.title, a.url, a.data, user.id)),
+    touchStmt(env, inc.id),
+  ]);
+  return json({ id }, 201);
+}
+
+export async function updateNote({ env, user, request, params }) {
+  const inc = await visibleIncident(env, user, params[0]);
+  if (!inc) return error("No such incident, or clearance insufficient", 404);
+  const n = await env.DB.prepare("SELECT id, author_id FROM incident_notes WHERE id = ? AND incident_id = ?").bind(params[1], inc.id).first();
+  if (!n) return error("No such entry", 404);
+  if (!mayEdit(user, inc, n.author_id)) return error("Only whoever wrote it, the case officer or an admin may amend an entry", 403);
+  const body = await readJson(request);
+  if (!body) return error("Bad request");
+  const text = s(body.body, 10000);
+  if (!text) return error("An entry cannot be left empty; remove it instead");
+  await env.DB.batch([
+    env.DB.prepare("UPDATE incident_notes SET body = ?, updated_at = datetime('now') WHERE id = ?").bind(text, n.id),
+    touchStmt(env, inc.id),
+  ]);
+  return json({ ok: true });
+}
+
+export async function deleteNote({ env, user, params }) {
+  const inc = await visibleIncident(env, user, params[0]);
+  if (!inc) return error("No such incident, or clearance insufficient", 404);
+  const n = await env.DB.prepare("SELECT id, author_id FROM incident_notes WHERE id = ? AND incident_id = ?").bind(params[1], inc.id).first();
+  if (!n) return error("No such entry", 404);
+  if (!mayEdit(user, inc, n.author_id)) return error("Only whoever wrote it, the case officer or an admin may remove an entry", 403);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM attachments WHERE note_id = ?").bind(n.id),
+    env.DB.prepare("DELETE FROM incident_notes WHERE id = ?").bind(n.id),
+    touchStmt(env, inc.id),
   ]);
   return json({ ok: true });
 }
@@ -189,27 +269,42 @@ export async function unlinkIncident({ env, user, params }) {
   return json({ ok: true });
 }
 
-/* ---------- attachments ---------- */
+/* ---------- exhibits ---------- */
+
+// Checks one attachment as sent by the browser: an image as a data URL, or a web address.
+function checkAttachment(body) {
+  if (!body || typeof body !== "object") return { err: "Bad attachment" };
+  const kind = KINDS.includes(body.kind) ? body.kind : "link";
+  let title = s(body.title, 140);
+  let url = s(body.url, 1000), data = null;
+  if (kind === "image") {
+    data = typeof body.data === "string" ? body.data : "";
+    if (!/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(data)) return { err: "The image must be a JPEG, PNG, WebP or GIF" };
+    if (data.length > MAX_IMAGE) return { err: "That image is too large even after shrinking (1 MB at most)" };
+    url = null;
+  } else {
+    if (!url || !/^https?:\/\/\S+$/i.test(url)) return { err: "Give a full web address, starting https://" };
+    if (!title) title = url.replace(/^https?:\/\//i, "").slice(0, 140);
+  }
+  return { ok: { kind, title, url, data } };
+}
 
 export async function addAttachment({ env, user, request, params }) {
   const inc = await visibleIncident(env, user, params[0]);
   if (!inc) return error("No such incident, or clearance insufficient", 404);
   const body = await readJson(request);
   if (!body) return error("Bad request");
-  const kind = KINDS.includes(body.kind) ? body.kind : "link";
-  let title = s(body.title, 140);
-  let url = s(body.url, 1000), data = null;
-  if (kind === "image") {
-    data = typeof body.data === "string" ? body.data : "";
-    if (!/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(data)) return error("The image must be a JPEG, PNG, WebP or GIF");
-    if (data.length > MAX_IMAGE) return error("That image is too large even after shrinking (1 MB at most)");
-    url = null;
-  } else {
-    if (!url || !/^https?:\/\/\S+$/i.test(url)) return error("Give a full web address, starting https://");
-    if (!title) title = url.replace(/^https?:\/\//i, "").slice(0, 140);
+  const r = checkAttachment(body);
+  if (r.err) return error(r.err);
+  let noteId = null;
+  if (body.note_id) {
+    const n = await env.DB.prepare("SELECT id FROM incident_notes WHERE id = ? AND incident_id = ?").bind(Number(body.note_id), inc.id).first();
+    if (!n) return error("No such entry on this incident", 404);
+    noteId = n.id;
   }
-  const res = await env.DB.prepare("INSERT INTO attachments (incident_id, kind, title, url, data, added_by) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(inc.id, kind, title, url, data, user.id).run();
+  const a = r.ok;
+  const res = await env.DB.prepare("INSERT INTO attachments (incident_id, note_id, kind, title, url, data, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .bind(inc.id, noteId, a.kind, a.title, a.url, a.data, user.id).run();
   await touch(env, inc.id);
   return json({ id: res.meta.last_row_id }, 201);
 }
@@ -219,7 +314,7 @@ export async function deleteAttachment({ env, user, params }) {
   if (!a) return error("No such attachment", 404);
   const inc = await visibleIncident(env, user, a.incident_id);
   if (!inc) return error("Clearance insufficient", 403);
-  if (!isAdmin(user) && a.added_by !== user.id && inc.officer_id !== user.id) return error("Only whoever added it, the case officer or an admin may remove an attachment", 403);
+  if (!mayEdit(user, inc, a.added_by)) return error("Only whoever added it, the case officer or an admin may remove an attachment", 403);
   await env.DB.prepare("DELETE FROM attachments WHERE id = ?").bind(a.id).run();
   await touch(env, inc.id);
   return json({ ok: true });

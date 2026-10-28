@@ -24,6 +24,12 @@ Central website of the Department of Culture, Office of the Public Advocate.
     another; images (shrunk in the browser, stored in D1, served privately),
     video links (YouTube and Vimeo embed) and other links are attached.
     Every name on an incident is an @-link that opens that person's card.
+    An incident is opened once and built on: its **case log** takes dated,
+    signed entries from anyone who can read the case, each with its own
+    images and links (`incident_notes`; attachments carry a `note_id`),
+    with @-name completion as on the Wire; the writer, the case officer or
+    an admin may amend or remove an entry. The status is changed from the
+    open case, and the list sorts by latest entry.
     Below your tier an incident is a CONFIDENTIAL card with its title;
     outside your compartments (Schatten) a bare one.
   - **The People's Notes** (`/department/notes/`): everything dropped in
