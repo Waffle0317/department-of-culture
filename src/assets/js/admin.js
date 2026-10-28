@@ -15,7 +15,7 @@
 
   const tierSel = (name, v) => `<select data-f="${name}">${[0, 1, 2, 3].map((t) => `<option value="${t}" ${t === Number(v) ? "selected" : ""}>${t === 0 ? "none" : "Tier " + t}</option>`).join("")}</select>`;
   const DIVS = [["government", "Abt. I Regierung"], ["secret", "Abt. II Schatten"], ["public", "Abt. III Öffentlichkeit"]];
-  const RANKS = ["Public Advocate", "Kulturdirektor", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
+  const RANKS = ["Public Advocate", "Kulturdirektor", "Deputy Director", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
   const rankSel = (v) => `<select data-f="rank"><option value="">—</option>${RANKS.map((r) => `<option value="${r}" ${v === r ? "selected" : ""}>${r}</option>`).join("")}</select>`;
   const divBoxes = (v) => {
     const set = String(v || "").split(",");
