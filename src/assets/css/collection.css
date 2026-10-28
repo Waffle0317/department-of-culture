@@ -294,3 +294,16 @@
 .wire__members p { padding: 10px; margin: 0; }
 .msg--named { border-color: var(--red); background: #fff3d6; }
 .col__dialog--narrow { width: min(460px, 94vw); }
+
+/* ----- attaching cards: nibs, draft line, direction popover --------------- */
+.nib { fill: var(--paper); stroke: var(--red); stroke-width: 2; cursor: crosshair; }
+.nib:hover { fill: var(--red); }
+.link--draft { stroke: var(--red); stroke-dasharray: 6 4; pointer-events: none; }
+.link__hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+.linkg:hover .link { stroke: var(--red); stroke-width: 3; }
+.node--target .node__box { stroke: var(--red); stroke-width: 3; fill: #fff3d6; }
+.col__pop { position: absolute; z-index: 8; width: 320px; background: #fff8ea; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--red); padding: 10px 12px 12px; display: grid; gap: 6px; }
+.col__pop button { text-align: left; background: var(--paper); border: 2px solid var(--ink); padding: 8px 10px; font: inherit; font-size: .95rem; cursor: pointer; color: var(--ink); }
+.col__pop button:hover { background: #fff3d6; border-color: var(--red); }
+.col__pop button b { color: var(--red); }
+.col__pop-cancel { border-color: var(--rule) !important; color: var(--gray) !important; font-family: var(--condensed) !important; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem !important; }

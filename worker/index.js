@@ -37,6 +37,7 @@ const ROUTES = [
   ["PUT",    /^\/api\/collection\/people\/(\d+)$/,            col.updatePerson, "user"],
   ["DELETE", /^\/api\/collection\/people\/(\d+)$/,            col.deletePerson, "admin"],
   ["PUT",    /^\/api\/collection\/people\/(\d+)\/position$/,  col.setPosition,  "user"],
+  ["PUT",    /^\/api\/collection\/people\/(\d+)\/superior$/,  col.setSuperior,  "user"],
   ["POST",   /^\/api\/collection\/people\/(\d+)\/reports$/,   col.addReport,    "user"],
   ["DELETE", /^\/api\/collection\/reports\/(\d+)$/,           col.deleteReport, "user"],
 

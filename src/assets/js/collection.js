@@ -189,8 +189,13 @@
       const sup = p.reports_to && (state.byId.get(p.reports_to) || state.externals.find((e) => e.id === p.reports_to));
       if (!sup) continue;
       const ext = !state.byId.has(p.reports_to);
-      const path = mk("path", { class: "link" + (ext ? " link--ext" : ""), d: linkPath(sup, p), "data-from": sup.id, "data-to": p.id });
-      el.links.appendChild(path);
+      const d = linkPath(sup, p);
+      const lg = mk("g", { class: "linkg", "data-from": sup.id, "data-to": p.id });
+      const hit = mk("path", { class: "link__hit", d, "data-from": sup.id, "data-to": p.id });
+      hit.appendChild(mk("title", {}, `${sup.name || "Confidential"} commands ${p.name || "a file"} · click to detach`));
+      lg.appendChild(hit);
+      lg.appendChild(mk("path", { class: "link" + (ext ? " link--ext" : ""), d, "data-from": sup.id, "data-to": p.id }));
+      el.links.appendChild(lg);
     }
     for (const e of state.externals) el.nodes.appendChild(nodeEl(e, true, q));
     for (const p of state.people) el.nodes.appendChild(nodeEl(p, false, q));
@@ -239,6 +244,14 @@
         ? `${divs} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}`
         : `T${p.tier} · ${STATUS[p.status] || p.status} · ${p.report_count} ${p.report_count === 1 ? "report" : "reports"}${p.party_member === 1 ? " · Party" : ""}`;
       g.appendChild(mk("text", { class: "node__foot", x: 14, y: H - 9 }, foot));
+      if (state.selected === p.id) {
+        // Nibs: drag one onto another card to attach the two.
+        for (const [cx, cy] of [[W / 2, 0], [W, H / 2], [W / 2, H], [0, H / 2]]) {
+          const n = mk("circle", { class: "nib", cx, cy, r: 7 });
+          n.appendChild(mk("title", {}, "Drag onto another card to attach"));
+          g.appendChild(n);
+        }
+      }
     } else {
       g.appendChild(mk("text", { class: "node__name", x: 14, y: 24 }, trunc(p.name, 24)));
       g.appendChild(mk("text", { class: "node__rank", x: 14, y: 42 }, trunc(`${p.rank_name || ""} · ${p.org_name}`, 34)));
@@ -248,10 +261,30 @@
 
   /* ---------- pan, zoom, drag ---------- */
   let drag = null;
+  const chartPoint = (e) => { const r = el.chart.getBoundingClientRect(); return { x: (e.clientX - r.left - state.view.x) / state.view.k, y: (e.clientY - r.top - state.view.y) / state.view.k }; };
+  const cardById = (id) => state.byId.get(id) || state.externals.find((x) => x.id === id);
   el.chart.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
+    closePop();
+    const nib = e.target.closest(".nib");
+    if (nib) {
+      const from = state.byId.get(Number(nib.closest(".node").dataset.id));
+      if (!from) return;
+      try { el.chart.setPointerCapture(e.pointerId); } catch {}
+      const sx = from._x + Number(nib.getAttribute("cx")), sy = from._y + Number(nib.getAttribute("cy"));
+      const draft = mk("path", { class: "link link--draft", d: `M${sx} ${sy} L${sx} ${sy}` });
+      el.links.appendChild(draft);
+      drag = { kind: "link", from, draft, sx, sy, target: null };
+      return;
+    }
+    const lg = e.target.closest(".linkg");
+    if (lg && !e.target.closest(".node")) {
+      try { el.chart.setPointerCapture(e.pointerId); } catch {}
+      drag = { kind: "linkhit", lg, sx: e.clientX, sy: e.clientY, moved: false };
+      return;
+    }
     const node = e.target.closest(".node");
-    el.chart.setPointerCapture(e.pointerId);
+    try { el.chart.setPointerCapture(e.pointerId); } catch {}
     if (node && node.classList.contains("node--redacted")) {
       toast(node.classList.contains("node--bare") ? "Confidential. Outside your compartments." : "Confidential. Your clearance does not reach this file.");
       drag = { kind: "pan", sx: e.clientX, sy: e.clientY, ox: state.view.x, oy: state.view.y, moved: false };
@@ -268,8 +301,20 @@
   });
   el.chart.addEventListener("pointermove", (e) => {
     if (!drag) return;
+    if (drag.kind === "link") {
+      const pt = chartPoint(e);
+      drag.draft.setAttribute("d", `M${drag.sx} ${drag.sy} L${pt.x} ${pt.y}`);
+      const over = document.elementFromPoint(e.clientX, e.clientY);
+      const node = over && over.closest(".node");
+      const ok = node && Number(node.dataset.id) !== drag.from.id && !node.classList.contains("node--redacted");
+      if (drag.target && drag.target !== node) drag.target.classList.remove("node--target");
+      drag.target = ok ? node : null;
+      if (drag.target) drag.target.classList.add("node--target");
+      return;
+    }
     const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
     if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    if (drag.kind === "linkhit") return;
     if (drag.kind === "pan") { state.view.x = drag.ox + dx; state.view.y = drag.oy + dy; applyView(); }
     else if (!drag.ext) {
       drag.p._x = drag.ox + dx / state.view.k; drag.p._y = drag.oy + dy / state.view.k;
@@ -285,6 +330,21 @@
     if (!drag) return;
     const d = drag; drag = null;
     el.chart.classList.remove("panning");
+    if (d.kind === "link") {
+      d.draft.remove();
+      if (d.target) {
+        d.target.classList.remove("node--target");
+        const to = cardById(Number(d.target.dataset.id));
+        if (to) askAttach(d.from, to, e.clientX, e.clientY);
+      }
+      return;
+    }
+    if (d.kind === "linkhit") {
+      if (d.moved) return;
+      const sub = state.byId.get(Number(d.lg.dataset.to)), sup = cardById(Number(d.lg.dataset.from));
+      if (sub && confirm(`Detach ${sub.name} from ${sup && sup.name ? sup.name : "their superior"}?`)) attachTo(sub.id, null);
+      return;
+    }
     if (d.kind === "node") {
       if (!d.moved) { if (d.ext) { await openPerson(d.id, true); } else openFile(d.id); }
       else if (!d.ext) {
@@ -304,6 +364,40 @@
     state.view.k = k1;
     applyView();
   }, { passive: false });
+
+  /* ---------- attaching cards ---------- */
+  function closePop() { const p = $(".col__pop", el.stage); if (p) p.remove(); }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+  // The dropped line could run either way: ask which.
+  function askAttach(a, b, cx, cy) {
+    closePop();
+    const pop = document.createElement("div"); pop.className = "col__pop";
+    const r = el.stage.getBoundingClientRect();
+    // The file panel may overlay the stage: keep the popover in the part still visible.
+    const visibleRight = el.file.hidden ? r.width : Math.min(r.width, el.file.getBoundingClientRect().left - r.left);
+    pop.style.left = Math.max(8, Math.min(cx - r.left, visibleRight - 330)) + "px";
+    const visibleBottom = Math.min(r.height, window.innerHeight - r.top);
+    pop.style.top = Math.max(8, Math.min(cy - r.top, visibleBottom - 200)) + "px";
+    pop.innerHTML = `<div class="label label--red">Attach</div>
+      <button type="button" data-dir="ab"><b>${esc(a.name)}</b> reports to <b>${esc(b.name)}</b></button>
+      <button type="button" data-dir="ba"><b>${esc(b.name)}</b> reports to <b>${esc(a.name)}</b></button>
+      <button type="button" class="col__pop-cancel" data-cancel>Cancel</button>`;
+    el.stage.appendChild(pop);
+    $("[data-cancel]", pop).addEventListener("click", closePop);
+    pop.querySelectorAll("[data-dir]").forEach((btn) => btn.addEventListener("click", () => {
+      const [sub, sup] = btn.dataset.dir === "ab" ? [a, b] : [b, a];
+      closePop();
+      attachTo(sub.id, sup.id);
+    }));
+  }
+  async function attachTo(id, supId) {
+    try {
+      await api("PUT", `/api/collection/people/${id}/superior`, { reports_to: supId });
+      await load();
+      if (state.selected) openFile(state.selected);
+      toast(supId ? "Attached" : "Detached");
+    } catch (e) { toast(e.message); }
+  }
 
   function fit() {
     const all = [...state.people, ...state.externals];
@@ -333,7 +427,7 @@
   /* ---------- file panel ---------- */
   function closeFile() {
     state.selected = null; el.file.hidden = true; el.file.innerHTML = ""; el.body.classList.remove("has-file");
-    el.nodes.querySelectorAll(".is-selected").forEach((n) => n.classList.remove("is-selected"));
+    if (!isIncTab() && state.people.length) render();
     if (state.incOpen !== null) { state.incOpen = null; if (isIncTab()) renderIncidents(); }
   }
 
@@ -352,7 +446,7 @@
     let d = pre;
     if (!d) { try { d = await api("GET", `/api/collection/people/${id}`); } catch (e) { toast(e.message); return; } }
     state.selected = id;
-    el.nodes.querySelectorAll(".node").forEach((n) => n.classList.toggle("is-selected", Number(n.dataset.id) === id));
+    if (!isIncTab()) render();
     const p = d.person;
     const tierOpts = []; for (let t = p.tier; t <= 4; t++) tierOpts.push(`<option value="${t}">${TIER_LABEL[t]}</option>`);
     const stubHtml = (s, withTier) => s.bare
@@ -381,8 +475,8 @@
           ${p.access === "open" ? `<span class="chip">Personnel record</span>${String(p.division || "").split(",").filter(Boolean).map((d) => `<span class="chip chip--red">${DIV_LABEL[d] || esc(d)}</span>`).join("") || `<span class="chip chip--muted">No division</span>`}` : `<span class="chip ${p.party_member === 1 ? "chip--red" : "chip--muted"}">${p.party_member === 1 ? "Party member" : p.party_member === 0 ? "Not in the Party" : "Party: unknown"}</span>`}
         </div>
         <dl class="file__dl">
-          <dt>Reports to</dt><dd>${d.superior ? stubHtml(d.superior, true) : "—"}</dd>
-          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => stubHtml(s, false)).join(", ") : "—"}</dd>
+          <dt>Reports to</dt><dd>${d.superior ? stubHtml(d.superior, true) + ` <button class="report__del" type="button" data-unsup>detach</button>` : "—"}</dd>
+          <dt>Subordinates</dt><dd>${d.subordinates.length ? d.subordinates.map((s) => stubHtml(s, false) + (s.redacted ? "" : ` <button class="report__del" type="button" data-unsub="${s.id}">detach</button>`)).join(", ") : "—"}</dd>
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
@@ -428,6 +522,9 @@
     });
     el.file.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openPerson(Number(a.dataset.open), true); }));
     el.file.querySelectorAll("[data-openinc]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openIncident(Number(a.dataset.openinc)); }));
+    const unsup = $("[data-unsup]", el.file);
+    if (unsup) unsup.addEventListener("click", () => { if (confirm(`Detach ${p.name} from their superior?`)) attachTo(p.id, null); });
+    el.file.querySelectorAll("[data-unsub]").forEach((b) => b.addEventListener("click", () => { if (confirm("Detach this subordinate?")) attachTo(Number(b.dataset.unsub), null); }));
     $("[data-report]", el.file).addEventListener("submit", async (e) => {
       e.preventDefault();
       const f = e.target;

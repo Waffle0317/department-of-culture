@@ -10,7 +10,11 @@ Central website of the Department of Culture, Office of the Public Advocate.
     draggable hierarchy chart per organization, a file per person with
     reports. Every record is filed at a tier (1–4, from the subject's rank)
     in a compartment (public, secret, government, from the organization),
-    and a Curator only sees what their clearance allows.
+    and a Curator only sees what their clearance allows. Cards attach on the
+    chart: select a card, drag one of its four nibs onto another card, and
+    choose which of the two reports to the other; click a line to detach.
+    The file panel also offers "detach" beside the superior and each
+    subordinate. Loops in the chain of command are refused.
   - **Incidents** (a tab on the Collection): events that involve several
     people. Each has a title, severity, status, date, place, summary, full
     account and a main case officer from the roll, and is filed in a

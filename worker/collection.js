@@ -243,6 +243,29 @@ export async function deletePerson({ env, params }) {
   return json({ ok: true });
 }
 
+// Attach a person to a superior (or detach with null), from the chart's nibs
+// or the file panel. Both files must be readable; loops are refused.
+export async function setSuperior({ env, user, request, params }) {
+  const p = await visiblePerson(env, user, params[0]);
+  if (!p) return error("No such file, or clearance insufficient", 404);
+  const body = await readJson(request);
+  if (!body) return error("Bad request");
+  const sup = body.reports_to ? Number(body.reports_to) : null;
+  if (sup) {
+    if (sup === p.id) return error("A person cannot report to themselves");
+    if (!(await visiblePerson(env, user, sup))) return error("No such file, or clearance insufficient", 404);
+    let cur = sup, guard = 0;
+    while (cur && guard++ < 200) {
+      const r = await env.DB.prepare("SELECT reports_to FROM people WHERE id = ?").bind(cur).first();
+      if (!r || !r.reports_to) break;
+      if (r.reports_to === p.id) return error("That would make a loop in the chain of command");
+      cur = r.reports_to;
+    }
+  }
+  await env.DB.prepare("UPDATE people SET reports_to = ?, updated_at = datetime('now') WHERE id = ?").bind(sup, p.id).run();
+  return json({ ok: true, reports_to: sup });
+}
+
 export async function setPosition({ env, user, request, params }) {
   const p = await visiblePerson(env, user, params[0]);
   if (!p) return error("No such file, or clearance insufficient", 404);
