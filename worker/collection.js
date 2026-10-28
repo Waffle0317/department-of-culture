@@ -6,7 +6,7 @@
 // of the people in compartments the Curator does not hold.
 
 import { json, error } from "./auth.js";
-import { isAdmin, userTier, orgAccess, personAccess, sameDivision } from "./db.js";
+import { isAdmin, userTier, orgAccess, personAccess, sameDivision, incidentStub } from "./db.js";
 
 // Investigative statuses for the Collection; personnel statuses for an open (Party) tab.
 const STATUSES = ["watched", "referred", "closed", "cleared", "serving", "probation", "leave", "retired"];
@@ -34,7 +34,7 @@ async function orgById(env, id) {
 }
 
 // Load a person with their organization, and check the caller may read the file.
-async function visiblePerson(env, user, id) {
+export async function visiblePerson(env, user, id) {
   const p = await env.DB.prepare(`
     SELECT p.*, o.slug AS org_slug, o.name AS org_name, o.compartment, o.min_tier, o.access, r.name AS rank_name, r.band AS rank_band
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
@@ -83,7 +83,7 @@ export async function listOrgs({ env, user }) {
 /* ---------- people ---------- */
 
 // What a Curator is told about a person they may not read in full.
-function stubOf(user, e) {
+export function stubOf(user, e) {
   const a = personAccess(user, e, e.tier, e);
   if (a === "full") {
     const { id, name, title, org_slug, org_name, rank_name } = e;
@@ -146,9 +146,16 @@ export async function getPerson({ env, user, params }) {
     FROM people p JOIN organizations o ON o.id = p.org_id LEFT JOIN ranks r ON r.id = p.rank_id
     WHERE p.reports_to = ? ORDER BY p.name`).bind(p.id).all()).results.map((e) => stubOf(user, e) || { id: e.id, redacted: 1, bare: 1 });
   const creator = p.created_by ? await env.DB.prepare("SELECT name FROM users WHERE id = ?").bind(p.created_by).first() : null;
+  // Incidents this person is attached to, each told at the reader's clearance.
+  const incRows = (await env.DB.prepare(`
+    SELECT ip.role, i.id, i.title, i.compartment, i.tier, i.severity, i.status, i.occurred_on, i.where_text, i.summary, i.officer_id, i.created_at, i.updated_at,
+           u.name AS officer_name, u.rank AS officer_rank, u.person_id AS officer_person_id
+    FROM incident_people ip JOIN incidents i ON i.id = ip.incident_id LEFT JOIN users u ON u.id = i.officer_id
+    WHERE ip.person_id = ? ORDER BY i.id DESC`).bind(p.id).all()).results;
+  const incidents = incRows.map((r) => { const st = incidentStub(user, r); return st ? { ...st, role: r.role } : null; }).filter(Boolean);
   return json({
     person: { ...p, created_by_name: creator ? creator.name : null },
-    reports, withheld, superior, subordinates: subs, readTier: t,
+    reports, withheld, superior, subordinates: subs, incidents, readTier: t,
     can: { edit: true, delete: isAdmin(user), admin: isAdmin(user), me: user.id },
   });
 }
@@ -230,6 +237,7 @@ export async function updatePerson({ env, user, request, params }) {
 
 export async function deletePerson({ env, params }) {
   await env.DB.prepare("DELETE FROM reports WHERE person_id = ?").bind(params[0]).run();
+  await env.DB.prepare("DELETE FROM incident_people WHERE person_id = ?").bind(params[0]).run();
   await env.DB.prepare("UPDATE people SET reports_to = NULL WHERE reports_to = ?").bind(params[0]).run();
   await env.DB.prepare("DELETE FROM people WHERE id = ?").bind(params[0]).run();
   return json({ ok: true });

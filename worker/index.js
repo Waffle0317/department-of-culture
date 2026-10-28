@@ -13,6 +13,7 @@ import * as col from "./collection.js";
 import * as adm from "./admin.js";
 import * as notes from "./notes.js";
 import * as chat from "./chat.js";
+import * as inc from "./incidents.js";
 
 // A throwaway hash so a failed lookup costs the same time as a failed password.
 const DECOY = "pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -39,6 +40,20 @@ const ROUTES = [
   ["POST",   /^\/api\/collection\/people\/(\d+)\/reports$/,   col.addReport,    "user"],
   ["DELETE", /^\/api\/collection\/reports\/(\d+)$/,           col.deleteReport, "user"],
 
+  ["GET",    /^\/api\/members$/,                              inc.listMembers,     "user"],
+  ["GET",    /^\/api\/collection\/incidents$/,                inc.listIncidents,   "user"],
+  ["POST",   /^\/api\/collection\/incidents$/,                inc.createIncident,  "user"],
+  ["GET",    /^\/api\/collection\/incidents\/(\d+)$/,         inc.getIncident,     "user"],
+  ["PUT",    /^\/api\/collection\/incidents\/(\d+)$/,         inc.updateIncident,  "user"],
+  ["DELETE", /^\/api\/collection\/incidents\/(\d+)$/,         inc.deleteIncident,  "user"],
+  ["POST",   /^\/api\/collection\/incidents\/(\d+)\/people$/, inc.attachPerson,    "user"],
+  ["DELETE", /^\/api\/collection\/incidents\/(\d+)\/people\/(\d+)$/, inc.detachPerson, "user"],
+  ["POST",   /^\/api\/collection\/incidents\/(\d+)\/links$/,  inc.linkIncident,    "user"],
+  ["DELETE", /^\/api\/collection\/incidents\/(\d+)\/links\/(\d+)$/, inc.unlinkIncident, "user"],
+  ["POST",   /^\/api\/collection\/incidents\/(\d+)\/attachments$/, inc.addAttachment, "user"],
+  ["DELETE", /^\/api\/collection\/attachments\/(\d+)$/,       inc.deleteAttachment, "user"],
+  ["GET",    /^\/api\/collection\/attachments\/(\d+)\/image$/, inc.attachmentImage, "user"],
+
   ["POST",   /^\/api\/box70$/,                                box70,            "public"],
   ["GET",    /^\/api\/notes$/,                                notes.list,       "user"],
   ["POST",   /^\/api\/notes\/(\d+)\/restrict$/,               notes.restrict,   "user"],
@@ -46,10 +61,11 @@ const ROUTES = [
   ["DELETE", /^\/api\/notes\/(\d+)$/,                         notes.remove,     "user"],
 
   ["GET",    /^\/api\/chat\/rooms$/,                          chat.listRooms,     "user"],
-  ["GET",    /^\/api\/chat\/rooms\/([a-z:]+)$/,               chat.listMessages,  "user"],
-  ["GET",    /^\/api\/chat\/rooms\/([a-z:]+)\/older$/,        chat.olderMessages, "user"],
-  ["POST",   /^\/api\/chat\/rooms\/([a-z:]+)$/,               chat.postMessage,   "user"],
-  ["POST",   /^\/api\/chat\/rooms\/([a-z:]+)\/read$/,         chat.read,          "user"],
+  ["POST",   /^\/api\/chat\/dm$/,                              chat.openDm,        "user"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.listMessages,  "user"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/older$/,    chat.olderMessages, "user"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.postMessage,   "user"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/read$/,     chat.read,          "user"],
   ["DELETE", /^\/api\/chat\/messages\/(\d+)$/,                chat.deleteMessage, "user"],
 
   ["GET",    /^\/api\/admin\/users$/,                         adm.listUsers,    "admin"],

@@ -12,6 +12,12 @@
   const STATUS_STAFF = ["serving", "probation", "leave", "retired"];
   const TIER_LABEL = { 1: "Tier 1 · Enlisted / NCO", 2: "Tier 2 · Officers", 3: "Tier 3 · General / Government", 4: "Tier 4 · Office only" };
   const BAND = { head: "Heads of State", general: "General ranks", officer: "Commissioned officers", nco: "Non-commissioned officers", enlisted: "Enlisted and civil" };
+  const INC_TAB = { slug: "incidents", name: "Incidents", id: 0 };
+  const SEV_RANK = { severe: 0, moderate: 1, minor: 2 };
+  const SEV_LABEL = { severe: "Severe", moderate: "Moderate", minor: "Minor" };
+  const INC_STATUS = { open: "Open", active: "Under investigation", referred: "Referred", closed: "Closed" };
+  const INC_STATUS_ORDER = ["open", "active", "referred", "closed"];
+  const ROLE_LABEL = { subject: "Subject", witness: "Witness", informant: "Informant", complainant: "Complainant", officer: "Officer present", other: "Other" };
 
   const el = {
     tabs: $("#tabs"), search: $("#search"), fit: $("#fit"), arrange: $("#arrange"), newBtn: $("#new"),
@@ -27,7 +33,9 @@
   const state = {
     orgs: [], all: [], org: null, people: [], externals: [], byId: new Map(),
     view: { x: 60, y: 40, k: 1 }, selected: null, editing: null, portrait: undefined,
+    incidents: [], incOpen: null, incEditing: null, members: null,
   };
+  const isIncTab = () => !!state.org && state.org.slug === "incidents";
 
   /* ---------- api ---------- */
   async function api(method, url, body) {
@@ -63,20 +71,33 @@
       b.addEventListener("click", () => selectOrg(o.slug));
       el.tabs.appendChild(b);
     }
+    const t = document.createElement("button");
+    t.className = "col__tab col__tab--inc"; t.type = "button"; t.setAttribute("role", "tab");
+    t.setAttribute("aria-selected", isIncTab() ? "true" : "false");
+    t.innerHTML = "Incidents<small>cases · every lane</small>";
+    t.addEventListener("click", () => selectOrg("incidents"));
+    el.tabs.appendChild(t);
   }
 
   async function selectOrg(slug, keepFile) {
-    const o = state.orgs.find((x) => x.slug === slug) || state.orgs[0];
+    const o = slug === "incidents" ? INC_TAB : (state.orgs.find((x) => x.slug === slug) || state.orgs[0]);
     if (!o) return;
     state.org = o;
     if (!keepFile) closeFile();
     location.hash = o.slug;
     renderTabs();
-    await load();
+    const incTab = isIncTab();
+    ie.wrap.hidden = !incTab;
+    el.fit.hidden = incTab; el.arrange.hidden = incTab;
+    el.newBtn.textContent = incTab ? "+ New incident" : "+ New file";
+    el.search.placeholder = incTab ? "Find an incident…" : "Find a name…";
+    if (incTab) { el.newBtn.hidden = false; el.empty.hidden = true; await loadIncidents(); }
+    else await load();
   }
 
   /* ---------- data ---------- */
   async function load() {
+    if (isIncTab()) return loadIncidents();
     const d = await api("GET", `/api/collection/people?org=${encodeURIComponent(state.org.slug)}`);
     state.people = d.people; state.externals = d.externals;
     state.byId = new Map(d.people.map((p) => [p.id, p]));
@@ -308,12 +329,13 @@
     } catch (e) { toast(e.message); }
   });
 
-  el.search.addEventListener("input", render);
+  el.search.addEventListener("input", () => (isIncTab() ? renderIncidents() : render()));
 
   /* ---------- file panel ---------- */
   function closeFile() {
     state.selected = null; el.file.hidden = true; el.file.innerHTML = ""; el.body.classList.remove("has-file");
     el.nodes.querySelectorAll(".is-selected").forEach((n) => n.classList.remove("is-selected"));
+    if (state.incOpen !== null) { state.incOpen = null; if (isIncTab()) renderIncidents(); }
   }
 
   async function openPerson(id, mayBeElsewhere) {
@@ -365,6 +387,7 @@
           <dt>Opened</dt><dd>${fmtDate(p.created_at)}${p.created_by_name ? ` by ${esc(p.created_by_name)}` : ""}</dd>
           <dt>Last entry</dt><dd>${fmtDate(p.updated_at)}</dd>
         </dl>
+        ${d.incidents && d.incidents.length ? `<h3>Incidents (${d.incidents.length})</h3><ul class="inc__links">${d.incidents.map((r) => `<li>${incLineHtml(r)}${r.role ? ` <span class="chip">${ROLE_LABEL[r.role] || esc(r.role)}</span>` : ""}</li>`).join("")}</ul>` : ""}
         <h3>${p.access === "open" ? "Service record" : "General information"}</h3>
         <div class="file__info">${p.info ? esc(p.info) : '<span class="muted">Nothing recorded yet.</span>'}</div>
         <div class="file__actions">
@@ -405,6 +428,7 @@
       try { await api("DELETE", `/api/collection/people/${p.id}`); closeFile(); await load(); toast("File destroyed"); } catch (e) { toast(e.message); }
     });
     el.file.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openPerson(Number(a.dataset.open), true); }));
+    el.file.querySelectorAll("[data-openinc]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openIncident(Number(a.dataset.openinc)); }));
     $("[data-report]", el.file).addEventListener("submit", async (e) => {
       e.preventDefault();
       const f = e.target;
@@ -536,7 +560,7 @@
   });
   el.pfPortraitClear.addEventListener("click", () => { state.portrait = null; el.pfPortraitPreview.hidden = true; el.pfPortraitClear.hidden = true; el.pfPortraitFile.value = ""; });
 
-  function shrinkImage(file, max) {
+  function shrinkImage(file, max, quality = 0.82) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -546,7 +570,7 @@
         c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
         c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url);
-        resolve(c.toDataURL("image/jpeg", 0.82));
+        resolve(c.toDataURL("image/jpeg", quality));
       };
       img.onerror = reject;
       img.src = url;
@@ -583,7 +607,7 @@
     el.dialog.showModal();
     setTimeout(() => el.form.name.focus(), 50);
   }
-  el.newBtn.addEventListener("click", () => openDialog(null));
+  el.newBtn.addEventListener("click", () => (isIncTab() ? openIncDialog(null) : openDialog(null)));
   el.pfCancel.addEventListener("click", () => el.dialog.close());
 
   el.form.addEventListener("submit", async (e) => {
@@ -611,8 +635,272 @@
   });
 
   window.addEventListener("hashchange", () => {
-    const want = (location.hash || "").slice(1).split("/")[0];
+    const parts = (location.hash || "").slice(1).split("/");
+    const want = parts[0];
+    if (want === "incidents") { if (!isIncTab()) selectOrg("incidents"); if (parts[1] && Number(parts[1]) !== state.incOpen) openIncident(Number(parts[1])); return; }
+    if (want === "person" && parts[1]) { if (Number(parts[1]) !== state.selected) openPerson(Number(parts[1]), true); return; }
     if (want && state.org && want !== state.org.slug && state.orgs.some((o) => o.slug === want)) selectOrg(want);
+  });
+
+  /* ---------- incidents ---------- */
+  const ie = {
+    wrap: $("#incidents"), list: $("#incList"), sort: $("#incSort"),
+    dialog: $("#incDialog"), form: $("#incForm"), tier: $("#ifTier"), officer: $("#ifOfficer"),
+    error: $("#ifError"), cancel: $("#ifCancel"), save: $("#ifSave"), kicker: $("#ifKicker"), title: $("#ifTitle"),
+  };
+  const fmtDay = (s) => { if (!s) return "Date not given"; try { return new Date(s + "T12:00:00Z").toLocaleDateString(undefined, { dateStyle: "long" }); } catch { return s; } };
+
+  async function members() {
+    if (!state.members) { try { state.members = (await api("GET", "/api/members")).members; } catch { state.members = []; } }
+    return state.members;
+  }
+
+  async function loadIncidents() {
+    const d = await api("GET", "/api/collection/incidents");
+    state.incidents = d.incidents;
+    renderIncidents();
+  }
+
+  function sortedIncidents() {
+    const q = el.search.value.trim().toLowerCase();
+    const list = state.incidents.filter((i) => !q || (i.title || "").toLowerCase().includes(q) || (i.where_text || "").toLowerCase().includes(q));
+    const mode = ie.sort.value;
+    const newest = (a, b) => b.id - a.id;
+    if (mode === "oldest") list.sort((a, b) => a.id - b.id);
+    else if (mode === "occurred") list.sort((a, b) => String(b.occurred_on || "").localeCompare(String(a.occurred_on || "")) || newest(a, b));
+    else if (mode === "severity") list.sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9) || newest(a, b));
+    else if (mode === "status") list.sort((a, b) => INC_STATUS_ORDER.indexOf(a.status) - INC_STATUS_ORDER.indexOf(b.status) || newest(a, b));
+    else if (mode === "title") list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || "")));
+    else list.sort(newest);
+    return list;
+  }
+
+  function statusChip(i) {
+    return `<span class="chip ${i.status === "closed" ? "chip--muted" : i.status === "referred" ? "chip--red" : ""}">${INC_STATUS[i.status] || esc(i.status)}</span>`;
+  }
+
+  function incCardHtml(i) {
+    if (i.bare) return `<div class="inc inc--bare"><div class="inc__confidential">Confidential</div><div class="inc__sub">Outside your compartments</div></div>`;
+    if (i.redacted) return `<div class="inc inc--redacted inc--${i.severity}">
+      <div class="inc__head"><span class="report__sev">${SEV_LABEL[i.severity] || "Minor"}</span><span class="inc__title">${esc(i.title)}</span></div>
+      <div class="inc__confidential">Confidential</div><div class="inc__sub">Tier ${i.tier} clearance required · ${esc(i.compartment)}</div></div>`;
+    return `<button class="inc inc--${i.severity} ${state.incOpen === i.id ? "is-selected" : ""}" type="button" data-inc="${i.id}">
+      <div class="inc__head"><span class="report__sev">${SEV_LABEL[i.severity] || "Minor"}</span><span class="inc__title">${esc(i.title)}</span>${statusChip(i)}</div>
+      <div class="inc__meta">${esc(fmtDay(i.occurred_on))}${i.where_text ? ` · ${esc(i.where_text)}` : ""} · ${esc(i.compartment)} · T${i.tier}</div>
+      ${i.summary ? `<p class="inc__summary">${esc(i.summary)}</p>` : ""}
+      <div class="inc__foot"><span>${i.officer_name ? `Case officer · ${esc(i.officer_name)}` : "No case officer"}</span><span>${i.people_count} ${i.people_count === 1 ? "person" : "people"} · ${i.attachment_count} attached · ${i.link_count} linked</span></div>
+    </button>`;
+  }
+
+  function renderIncidents() {
+    const list = sortedIncidents();
+    ie.list.innerHTML = list.length ? list.map(incCardHtml).join("") : `<div class="inc__none"><div class="label label--red">Nothing on file</div><p>No incident at your clearance. Open one to begin.</p></div>`;
+    ie.list.querySelectorAll("[data-inc]").forEach((b) => b.addEventListener("click", () => openIncident(Number(b.dataset.inc))));
+  }
+  ie.sort.addEventListener("change", () => { try { localStorage.setItem("doc_inc_sort", ie.sort.value); } catch {} renderIncidents(); });
+  try { ie.sort.value = localStorage.getItem("doc_inc_sort") || "newest"; } catch {}
+
+  // One line about an incident, as shown on a person's card or as a related case.
+  function incLineHtml(r) {
+    if (r.bare) return `<span class="chip chip--red">Confidential</span>`;
+    if (r.redacted) return `${esc(r.title)} <span class="chip chip--red">Confidential · Tier ${r.tier}</span>`;
+    return `<a href="#" data-openinc="${r.id}">${esc(r.title)}</a> <span class="muted">· ${SEV_LABEL[r.severity] || "Minor"} · ${INC_STATUS[r.status] || esc(r.status)}</span>`;
+  }
+
+  function videoEmbed(url) {
+    try {
+      const u = new URL(url);
+      let id = null, src = null;
+      if (/(^|\.)youtube\.com$/.test(u.hostname)) id = u.searchParams.get("v") || (u.pathname.match(/\/(?:shorts|embed|live)\/([\w-]+)/) || [])[1];
+      else if (u.hostname === "youtu.be") id = u.pathname.slice(1).split("/")[0];
+      if (id && /^[\w-]{6,}$/.test(id)) src = `https://www.youtube-nocookie.com/embed/${id}`;
+      else if (/(^|\.)vimeo\.com$/.test(u.hostname)) { const m = u.pathname.match(/\/(\d+)/); if (m) src = `https://player.vimeo.com/video/${m[1]}`; }
+      return src ? `<div class="att__video"><iframe src="${src}" loading="lazy" allowfullscreen allow="encrypted-media; picture-in-picture" referrerpolicy="no-referrer"></iframe></div>` : "";
+    } catch { return ""; }
+  }
+
+  // A search box that fills a results list: `fetcher(q)` returns items, `line(item)` renders one, `pick(item)` acts.
+  function searchBox(input, results, fetcher, line, pick) {
+    let timer = null;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 2) { results.hidden = true; return; }
+      timer = setTimeout(async () => {
+        try {
+          const items = await fetcher(q);
+          results.innerHTML = items.length ? items.map((it, n) => `<button type="button" data-n="${n}">${line(it)}</button>`).join("") : '<button type="button" disabled>Nothing by that name at your clearance</button>';
+          results.hidden = false;
+          results.querySelectorAll("button[data-n]").forEach((b) => b.addEventListener("click", () => { results.hidden = true; input.value = ""; pick(items[Number(b.dataset.n)]); }));
+        } catch (e) { toast(e.message); }
+      }, 250);
+    });
+  }
+
+  async function openIncident(id) {
+    let d;
+    try { d = await api("GET", `/api/collection/incidents/${id}`); } catch (e) { toast(e.message); return; }
+    if (!isIncTab()) { state.incOpen = id; await selectOrg("incidents", true); }
+    state.incOpen = id;
+    location.hash = `incidents/${id}`;
+    renderIncidents();
+    const i = d.incident;
+    const mine = i.officer_id === d.can.me;
+    const personHtml = (s) => s.bare ? `<span class="chip chip--red">Confidential</span>`
+      : s.redacted ? `${esc(s.name)}${s.rank_name ? ` <span class="muted">· ${esc(s.rank_name)}</span>` : ""} <span class="chip chip--red">Confidential · Tier ${s.tier}</span>`
+      : `<a href="#" class="mention" data-open="${s.id}">@${esc(s.name)}</a> <span class="muted">· ${esc(s.rank_name || "")} ${esc(s.org_name)}</span>`;
+    const officerHtml = !i.officer_id ? "—"
+      : (i.officer_person_id ? `<a href="#" class="mention" data-open="${i.officer_person_id}">@${esc(i.officer_name)}</a>` : esc(i.officer_name)) + (i.officer_rank ? ` <span class="muted">· ${esc(i.officer_rank)}</span>` : "");
+    const attHtml = (a) => {
+      const del = (d.can.admin || a.added_by === d.can.me || mine) ? `<button class="report__del" type="button" data-delatt="${a.id}">remove</button>` : "";
+      if (a.kind === "image") return `<figure class="att att--image"><a href="/api/collection/attachments/${a.id}/image" target="_blank" rel="noopener"><img src="/api/collection/attachments/${a.id}/image" alt="${esc(a.title || "")}" loading="lazy"></a><figcaption>${esc(a.title || "Image")} <span class="muted">· ${esc(a.added_by_name || "")}</span> ${del}</figcaption></figure>`;
+      return `<div class="att att--${a.kind}">${a.kind === "video" ? videoEmbed(a.url) : ""}<div class="att__line"><span class="chip">${a.kind === "video" ? "Video" : "Link"}</span><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">${esc(a.title || a.url)}</a><span class="muted">· ${esc(a.added_by_name || "")}</span> ${del}</div></div>`;
+    };
+    el.file.innerHTML = `
+      <div class="file">
+        <div class="file__top">
+          <div class="label label--red">Incident · No. ${i.id}</div>
+          <button class="file__close" type="button" aria-label="Close incident" data-close>×</button>
+        </div>
+        <div class="file__name" style="margin-top:10px">${esc(i.title)}</div>
+        <div class="file__stamps">
+          <span class="chip ${i.severity === "severe" ? "chip--red" : i.severity === "moderate" ? "chip--ink" : ""}">${SEV_LABEL[i.severity] || "Minor"}</span>
+          ${statusChip(i)}
+          <span class="chip">${esc(i.compartment)}</span>
+          <span class="chip chip--ink">${esc(TIER_LABEL[i.tier] || "Tier " + i.tier)}</span>
+        </div>
+        <dl class="file__dl">
+          <dt>When</dt><dd>${esc(fmtDay(i.occurred_on))}</dd>
+          <dt>Where</dt><dd>${i.where_text ? esc(i.where_text) : "—"}</dd>
+          <dt>Case officer</dt><dd>${officerHtml}</dd>
+          <dt>Opened</dt><dd>${fmtDate(i.created_at)}${i.created_by_name ? ` by ${esc(i.created_by_name)}` : ""}</dd>
+          <dt>Last entry</dt><dd>${fmtDate(i.updated_at)}</dd>
+        </dl>
+        ${i.summary ? `<p class="file__summary">${esc(i.summary)}</p>` : ""}
+        <h3>Account</h3>
+        <div class="file__info">${i.body ? esc(i.body) : '<span class="muted">Nothing recorded yet.</span>'}</div>
+        <div class="file__actions">
+          <button class="btn btn--ghost btn--sm" type="button" data-edit>Amend</button>
+          ${d.can.delete ? `<button class="btn btn--ghost btn--sm" type="button" data-delete style="border-color:var(--red);color:var(--red)">Destroy incident</button>` : ""}
+        </div>
+        <h3>People (${d.people.length})</h3>
+        <ul class="inc__people">${d.people.map((s) => `<li>${personHtml(s)} <span class="chip">${ROLE_LABEL[s.role] || esc(s.role)}</span>${s.note ? ` <span class="muted">${esc(s.note)}</span>` : ""}<button class="report__del" type="button" data-detach="${s.id}">remove</button></li>`).join("") || '<li class="muted">No one attached yet.</li>'}</ul>
+        <form class="inc__attach" data-attach>
+          <div class="row">
+            <div class="pf__sup"><input type="search" data-psearch placeholder="Attach a person: search by name…" autocomplete="off"><div class="pf__results" data-presults hidden></div></div>
+            <select name="role">${Object.entries(ROLE_LABEL).map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select>
+          </div>
+          <div class="row"><input type="text" name="note" class="grow" maxlength="300" placeholder="Note on their part (optional)"><span class="muted" style="font-size:.85rem">Pick a name from the search to attach.</span></div>
+        </form>
+        <h3>Linked incidents (${d.related.length})</h3>
+        <ul class="inc__links">${d.related.map((r) => `<li>${incLineHtml(r)}${!r.redacted ? `<button class="report__del" type="button" data-unlink="${r.id}">unlink</button>` : ""}</li>`).join("") || '<li class="muted">None linked.</li>'}</ul>
+        <div class="inc__attach"><div class="pf__sup"><input type="search" data-isearch placeholder="Link an incident: search by title…" autocomplete="off"><div class="pf__results" data-iresults hidden></div></div></div>
+        <h3>Attachments (${d.attachments.length})</h3>
+        <div class="inc__atts">${d.attachments.map(attHtml).join("") || '<p class="muted" style="font-size:.95rem">Nothing attached yet.</p>'}</div>
+        <form class="inc__attach" data-newatt>
+          <div class="row">
+            <select name="kind"><option value="image">Image</option><option value="video">Video link</option><option value="link">Link or paper</option></select>
+            <input type="text" name="title" class="grow" maxlength="140" placeholder="Caption or title">
+          </div>
+          <div class="row">
+            <input type="file" name="file" accept="image/*" data-attfile>
+            <input type="url" name="url" class="grow" placeholder="https://…" data-atturl hidden>
+            <button class="btn btn--red btn--sm" type="submit">Add</button>
+          </div>
+        </form>
+      </div>`;
+    el.file.hidden = false; el.body.classList.add("has-file");
+    el.file.scrollTop = 0;
+
+    const reopen = async () => { await openIncident(i.id); await loadIncidents(); };
+    $("[data-close]", el.file).addEventListener("click", closeFile);
+    $("[data-edit]", el.file).addEventListener("click", () => openIncDialog(i));
+    const del = $("[data-delete]", el.file);
+    if (del) del.addEventListener("click", async () => {
+      if (!confirm(`Destroy the incident "${i.title}" with everything attached to it? This cannot be undone.`)) return;
+      try { await api("DELETE", `/api/collection/incidents/${i.id}`); closeFile(); await loadIncidents(); toast("Incident destroyed"); } catch (e) { toast(e.message); }
+    });
+    el.file.querySelectorAll("[data-open]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openPerson(Number(a.dataset.open), true); }));
+    el.file.querySelectorAll("[data-openinc]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); openIncident(Number(a.dataset.openinc)); }));
+    el.file.querySelectorAll("[data-detach]").forEach((b) => b.addEventListener("click", async () => {
+      try { await api("DELETE", `/api/collection/incidents/${i.id}/people/${b.dataset.detach}`); await reopen(); } catch (e) { toast(e.message); }
+    }));
+    el.file.querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", async () => {
+      try { await api("DELETE", `/api/collection/incidents/${i.id}/links/${b.dataset.unlink}`); await reopen(); } catch (e) { toast(e.message); }
+    }));
+    el.file.querySelectorAll("[data-delatt]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Remove this attachment?")) return;
+      try { await api("DELETE", `/api/collection/attachments/${b.dataset.delatt}`); await reopen(); } catch (e) { toast(e.message); }
+    }));
+
+    const attach = $("[data-attach]", el.file);
+    attach.addEventListener("submit", (e) => e.preventDefault());
+    searchBox($("[data-psearch]", el.file), $("[data-presults]", el.file),
+      async (q) => (await api("GET", `/api/collection/search?q=${encodeURIComponent(q)}`)).results,
+      (r) => `<b>${esc(r.name)}</b><small>${esc(r.rank_name || "")} · ${esc(r.org_name)}</small>`,
+      async (r) => { try { await api("POST", `/api/collection/incidents/${i.id}/people`, { person_id: r.id, role: attach.role.value, note: attach.note.value }); await reopen(); } catch (e) { toast(e.message); } });
+    searchBox($("[data-isearch]", el.file), $("[data-iresults]", el.file),
+      async (q) => (await api("GET", `/api/collection/incidents?q=${encodeURIComponent(q)}`)).incidents.filter((x) => !x.redacted && x.id !== i.id),
+      (r) => `<b>${esc(r.title)}</b><small>${SEV_LABEL[r.severity] || "Minor"} · ${esc(fmtDay(r.occurred_on))}</small>`,
+      async (r) => { try { await api("POST", `/api/collection/incidents/${i.id}/links`, { incident_id: r.id }); await reopen(); } catch (e) { toast(e.message); } });
+
+    const na = $("[data-newatt]", el.file);
+    const syncKind = () => { const img = na.kind.value === "image"; $("[data-attfile]", na).hidden = !img; $("[data-atturl]", na).hidden = img; };
+    na.kind.addEventListener("change", syncKind); syncKind();
+    na.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const kind = na.kind.value;
+      const body = { kind, title: na.title.value };
+      try {
+        if (kind === "image") {
+          const f = na.file.files[0];
+          if (!f) { toast("Choose an image first"); return; }
+          body.data = await shrinkImage(f, 1600, 0.85);
+        } else body.url = na.url.value;
+        await api("POST", `/api/collection/incidents/${i.id}/attachments`, body);
+        await reopen();
+      } catch (err) { toast(err.message); }
+    });
+  }
+
+  /* ---------- incident dialog ---------- */
+  async function openIncDialog(incident) {
+    state.incEditing = incident || null;
+    ie.form.reset(); ie.error.hidden = true;
+    ie.tier.innerHTML = [1, 2, 3, 4].map((t) => `<option value="${t}">${TIER_LABEL[t]}</option>`).join("");
+    const list = await members();
+    ie.officer.innerHTML = '<option value="">— none assigned —</option>' + list.map((m) => `<option value="${m.id}">${esc(m.name)}${m.rank ? ` · ${esc(m.rank)}` : ""}</option>`).join("");
+    ie.kicker.textContent = incident ? `Incident · No. ${incident.id}` : "New incident";
+    ie.title.textContent = incident ? "Amend the incident" : "Open an incident";
+    ie.save.textContent = incident ? "Save amendments" : "Open the incident";
+    const f = ie.form;
+    if (incident) {
+      f.title.value = incident.title || ""; f.severity.value = incident.severity || "minor"; f.status.value = incident.status || "open";
+      f.occurred_on.value = incident.occurred_on || ""; f.where_text.value = incident.where_text || "";
+      f.compartment.value = incident.compartment || "public"; f.tier.value = String(incident.tier || 1);
+      f.officer_id.value = incident.officer_id ? String(incident.officer_id) : "";
+      f.summary.value = incident.summary || ""; f.body.value = incident.body || "";
+    } else if (window.DOC_ME && window.DOC_ME.id) f.officer_id.value = String(window.DOC_ME.id);
+    ie.dialog.showModal();
+    setTimeout(() => f.title.focus(), 50);
+  }
+  ie.cancel.addEventListener("click", () => ie.dialog.close());
+  ie.form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = ie.form;
+    const body = {
+      title: f.title.value, severity: f.severity.value, status: f.status.value, occurred_on: f.occurred_on.value || null, where_text: f.where_text.value,
+      compartment: f.compartment.value, tier: Number(f.tier.value), officer_id: f.officer_id.value ? Number(f.officer_id.value) : null,
+      summary: f.summary.value, body: f.body.value,
+    };
+    ie.save.disabled = true;
+    try {
+      const r = state.incEditing ? await api("PUT", `/api/collection/incidents/${state.incEditing.id}`, body) : await api("POST", "/api/collection/incidents", body);
+      ie.dialog.close();
+      if (!r.visible) { toast("Filed above your clearance; it is now hidden from you", 4500); closeFile(); await loadIncidents(); }
+      else { await loadIncidents(); await openIncident(r.id); }
+    } catch (err) { ie.error.textContent = err.message; ie.error.hidden = false; }
+    finally { ie.save.disabled = false; }
   });
 
   /* ---------- boot ---------- */
@@ -621,8 +909,14 @@
       const d = await api("GET", "/api/collection/orgs");
       state.orgs = d.orgs; state.all = d.all;
       if (!state.orgs.length) { el.empty.hidden = false; $("p", el.empty).textContent = "You hold no clearance in any compartment. Ask an admin."; return; }
-      const want = (location.hash || "").slice(1).split("/")[0];
-      await selectOrg(state.orgs.some((o) => o.slug === want) ? want : state.orgs[0].slug);
+      const parts = (location.hash || "").slice(1).split("/");
+      const want = parts[0];
+      if (want === "incidents") { await selectOrg("incidents"); if (parts[1]) openIncident(Number(parts[1])); }
+      else if (want === "person" && parts[1]) { await selectOrg(state.orgs[0].slug); openPerson(Number(parts[1]), true); }
+      else {
+        await selectOrg(state.orgs.some((o) => o.slug === want) ? want : state.orgs[0].slug);
+        if (parts[1] && /^\d+$/.test(parts[1])) openPerson(Number(parts[1]), true);
+      }
     } catch (e) { toast(e.message, 6000); }
   })();
 })();

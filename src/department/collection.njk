@@ -39,6 +39,25 @@ app: true
         <div class="label label--red">Nothing on file</div>
         <p>No one in this organization is on the Collection at your clearance. Open a new file to begin.</p>
       </div>
+      <div class="col__incidents" id="incidents" hidden>
+        <div class="inc__bar">
+          <div>
+            <div class="label label--red">Incidents</div>
+            <p class="inc__lead">Events that involve more than one person. Each is filed in a compartment at a tier, like a person's file; the case officer always reads their own case. Every name on an incident opens that person's card.</p>
+          </div>
+          <label class="inc__sort"><span class="label">Sort</span>
+            <select id="incSort">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="occurred">Date of incident</option>
+              <option value="severity">By severity</option>
+              <option value="status">By status</option>
+              <option value="title">By title</option>
+            </select>
+          </label>
+        </div>
+        <div class="inc__list" id="incList"></div>
+      </div>
       <div class="col__legend">
         <span><i class="t1"></i>Tier 1 · Enlisted, NCO</span>
         <span><i class="t2"></i>Tier 2 · Officers</span>
@@ -104,6 +123,35 @@ app: true
       <footer class="pf__foot">
         <button type="button" class="btn btn--ghost" id="pfCancel">Cancel</button>
         <button type="submit" class="btn btn--red" id="pfSave">Enter in the Collection</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="col__dialog" id="incDialog">
+    <form method="dialog" id="incForm" class="pf">
+      <header class="pf__head">
+        <div class="label label--red" id="ifKicker">New incident</div>
+        <h2 class="pf__title" id="ifTitle">Open an incident</h2>
+      </header>
+      <div class="pf__grid">
+        <label class="field pf__span2"><span>Title</span><input name="title" required maxlength="140" placeholder="e.g. Disturbance at the Hall of the Twelve"></label>
+        <label class="field"><span>Severity</span>
+          <select name="severity"><option value="minor">Minor</option><option value="moderate">Moderate</option><option value="severe">Severe</option></select></label>
+        <label class="field"><span>Status</span>
+          <select name="status"><option value="open">Open</option><option value="active">Under investigation</option><option value="referred">Referred</option><option value="closed">Closed</option></select></label>
+        <label class="field"><span>Date of the incident</span><input name="occurred_on" type="date" min="1900-01-01" max="2099-12-31"></label>
+        <label class="field"><span>Where</span><input name="where_text" maxlength="160" placeholder="e.g. Harlem, 125th Street"></label>
+        <label class="field"><span>Compartment</span>
+          <select name="compartment"><option value="public">Public · Öffentlichkeit</option><option value="secret">Secret · Schatten</option><option value="government">Government · Regierung</option></select></label>
+        <label class="field"><span>Filed at tier</span><select name="tier" id="ifTier"></select></label>
+        <label class="field pf__span2"><span>Main case officer</span><select name="officer_id" id="ifOfficer"><option value="">— none assigned —</option></select></label>
+        <label class="field pf__span2"><span>Summary</span><textarea name="summary" rows="2" maxlength="600" placeholder="One or two lines: what happened."></textarea></label>
+        <label class="field pf__span2"><span>Full account and supporting information</span><textarea name="body" rows="7" maxlength="30000" placeholder="Sequence of events, who was present, what was said, what was found. People, images, video links and papers are attached once the incident is open."></textarea></label>
+      </div>
+      <div class="pf__error" id="ifError" hidden></div>
+      <footer class="pf__foot">
+        <button type="button" class="btn btn--ghost" id="ifCancel">Cancel</button>
+        <button type="submit" class="btn btn--red" id="ifSave">Open the incident</button>
       </footer>
     </form>
   </dialog>

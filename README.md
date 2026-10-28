@@ -11,6 +11,17 @@ Central website of the Department of Culture, Office of the Public Advocate.
     reports. Every record is filed at a tier (1–4, from the subject's rank)
     in a compartment (public, secret, government, from the organization),
     and a Curator only sees what their clearance allows.
+  - **Incidents** (a tab on the Collection): events that involve several
+    people. Each has a title, severity, status, date, place, summary, full
+    account and a main case officer from the roll, and is filed in a
+    compartment at a tier like a person's file; the case officer always reads
+    their own case. People are attached with a role (subject, witness,
+    informant…) and the incident shows on their card; incidents link to one
+    another; images (shrunk in the browser, stored in D1, served privately),
+    video links (YouTube and Vimeo embed) and other links are attached.
+    Every name on an incident is an @-link that opens that person's card.
+    Below your tier an incident is a CONFIDENTIAL card with its title;
+    outside your compartments (Schatten) a bare one.
   - **The People's Notes** (`/department/notes/`): everything dropped in
     **Box 70** (`/box-70/`, the public report form). Any member reads a note;
     Tier 3 in any compartment may delete one; Tier 4 may restrict one, which
@@ -20,7 +31,11 @@ Central website of the Department of Culture, Office of the Public Advocate.
     everyone reads), Everyone, and one room per division for those who sit in
     it. Messages are kept in D1 and delivered by polling every few seconds;
     the sidebar entry shows an unread count. Authors and admins can remove a
-    message, which leaves a marker.
+    message, which leaves a marker. Any two members can open a **private
+    room** (+ New under Private) that no one else can read. Typing **@** in
+    the composer offers members of the roll and files on the Collection;
+    a picked name is stored as `@[Name](u:id)` or `@[Name](p:id)` and shown
+    as a link to that person's card (`/department/collection/#person/<id>`).
   - **Admin hub** (`/department/admin/`): the roll of Curators, their
     clearances and passwords, and which compartment each organization is in.
 - **Database**: Cloudflare D1 (`wrangler.jsonc` → `d1_databases`). The Worker

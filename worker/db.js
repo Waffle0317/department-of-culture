@@ -103,6 +103,53 @@ CREATE TABLE IF NOT EXISTS room_reads (
   last_id INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, room)
 );
+CREATE TABLE IF NOT EXISTS dms (
+  room TEXT PRIMARY KEY,
+  a INTEGER NOT NULL,
+  b INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS incidents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  compartment TEXT NOT NULL DEFAULT 'public',
+  tier INTEGER NOT NULL DEFAULT 1,
+  severity TEXT NOT NULL DEFAULT 'minor',
+  status TEXT NOT NULL DEFAULT 'open',
+  occurred_on TEXT,
+  where_text TEXT,
+  summary TEXT,
+  body TEXT,
+  officer_id INTEGER REFERENCES users(id),
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS incident_people (
+  incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'subject',
+  note TEXT,
+  added_by INTEGER,
+  PRIMARY KEY (incident_id, person_id)
+);
+CREATE INDEX IF NOT EXISTS incident_people_person ON incident_people(person_id);
+CREATE TABLE IF NOT EXISTS incident_links (
+  a INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  b INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  PRIMARY KEY (a, b)
+);
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'link',
+  title TEXT,
+  url TEXT,
+  data TEXT,
+  added_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS attachments_incident ON attachments(incident_id);
 `;
 
 let ready = null;
@@ -320,4 +367,33 @@ export function visibilityClause(user, tierExpr = "p.tier") {
       user.tier_government, user.tier_government,
     ],
   };
+}
+
+/* ---------- incidents ---------- */
+
+// How a user sees an incident filed at `tier` in `compartment`:
+//   "full" — tier reached, Tier 4, or the case officer reading their own case
+//   "redacted" — some tier in the compartment, but not enough: title and severity only
+//   "bare" — no tier there, but Schatten: a CONFIDENTIAL card and nothing else
+//   null — not shown
+export function incidentAccess(user, inc) {
+  if (!user) return null;
+  if (user.tier4 || (inc.officer_id && inc.officer_id === user.id)) return "full";
+  const t = userTier(user, inc.compartment);
+  if (t >= Number(inc.tier || 1)) return "full";
+  if (t > 0) return "redacted";
+  if (inSchatten(user)) return "bare";
+  return null;
+}
+
+// What a user is told about an incident on a list or a card.
+export function incidentStub(user, inc, extra) {
+  const a = incidentAccess(user, inc);
+  if (!a) return null;
+  if (a === "bare") return { id: inc.id, redacted: 1, bare: 1 };
+  const base = { id: inc.id, title: inc.title, severity: inc.severity, status: inc.status, occurred_on: inc.occurred_on,
+    compartment: inc.compartment, tier: inc.tier, created_at: inc.created_at, updated_at: inc.updated_at };
+  if (a === "redacted") return { ...base, redacted: 1 };
+  return { ...base, where_text: inc.where_text, summary: inc.summary, officer_id: inc.officer_id, officer_name: inc.officer_name || null,
+    officer_rank: inc.officer_rank || null, officer_person_id: inc.officer_person_id || null, ...(extra || {}) };
 }
