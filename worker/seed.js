@@ -70,7 +70,7 @@ const R = [
   ["vsk", "enlisted", ["Obergefreiter", "Gefreiter", "Obergrenadier", "Grenadier"]],
 
   ["abi", "general",  ["Director"]],
-  ["abi", "officer",  ["Deputy Director", "Chief Inspector", "Senior Inspector", "Inspector", "Special Agent", "Senior Agent", "Agent"]],
+  ["abi", "officer",  ["Stellvertretender Kulturdirektor", "Chief Inspector", "Senior Inspector", "Inspector", "Special Agent", "Senior Agent", "Agent"]],
   ["abi", "nco",      ["Chief Operative", "Senior Operative", "Operative", "Senior Detective", "Detective"]],
 
   ["nypd", "general",  ["Commissioner", "Chief"]],
@@ -86,7 +86,7 @@ const R = [
 
   // The Party tab holds the Department's own personnel records, so its ranks
   // are the Department's internal ranks and nothing else.
-  ["party", "head",     ["Public Advocate", "Kulturdirektor", "Deputy Director"]],
+  ["party", "head",     ["Public Advocate", "Kulturdirektor", "Stellvertretender Kulturdirektor"]],
   ["party", "general",  ["Abteilungsleiter"]],
   ["party", "officer",  ["Oberkurator"]],
   ["party", "nco",      ["Kurator"]],
@@ -97,7 +97,7 @@ const R = [
 
 // The Department's internal ranks, highest first: used on the roll of users
 // (visual only) and as the Party tab's rank list.
-export const DEPT_RANKS = ["Public Advocate", "Kulturdirektor", "Deputy Director", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
+export const DEPT_RANKS = ["Public Advocate", "Kulturdirektor", "Stellvertretender Kulturdirektor", "Abteilungsleiter", "Oberkurator", "Kurator", "Anwärter"];
 
 export const RANKS = [];
 for (const [org, band, names] of R) {

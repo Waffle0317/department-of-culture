@@ -177,6 +177,13 @@ async function setup(env) {
   const byslug = Object.fromEntries(orgs.results.map((o) => [o.slug, o.id]));
   const rows = RANKS.filter((r) => byslug[r.org]);
 
+  // Renamed ranks keep their links: fix the name in place before the cleanup below.
+  const RENAMED = { "Deputy Director": "Stellvertretender Kulturdirektor" };
+  for (const [from, to] of Object.entries(RENAMED)) {
+    if (byslug.party) await db.prepare("UPDATE ranks SET name = ? WHERE org_id = ? AND name = ?").bind(to, byslug.party, from).run();
+    await db.prepare("UPDATE users SET rank = ? WHERE rank = ?").bind(to, from).run();
+  }
+
   // The Party tab's ranks are the Department's own; retire any other rank
   // still filed there (people keep their file, with the rank cleared).
   if (byslug.party) {

@@ -37,7 +37,7 @@ Every member of the Department is a Public Curator first; rank sets who directs 
 | Rank | English | Role |
 | --- | --- | --- |
 | **Kulturdirektor** | Director of Culture | Heads the Department; keeps the Collection, the rolls and final review of every referral |
-| **Deputy Director** | Deputy Director of Culture | Stands in for the Director; directs the division chiefs in his absence |
+| **Stellvertretender Kulturdirektor** | Deputy Director of Culture | Stands in for the Director; directs the division chiefs in his absence |
 | **Abteilungsleiter** | Division Chief | Leads one division; reports to the Director weekly |
 | **Oberkurator** | Senior Curator | Leads a desk or a team; trains new Curators |
 | **Kurator** | Curator | Field officer of the Department |
