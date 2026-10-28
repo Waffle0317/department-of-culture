@@ -13,6 +13,7 @@
     "items": [
       { "label": "Desk", "url": "/department/" },
       { "label": "Mandate on Culture", "url": "/department/mandate-text/" },
+      { "label": "Spiritual Penal Code", "url": "/department/spiritual-code/" },
       { "label": "Reading of the Mandate", "url": "/department/mandate/" },
       { "label": "Procedures", "url": "/department/procedures/" },
       { "label": "Structure and Desks", "url": "/department/structure/" },

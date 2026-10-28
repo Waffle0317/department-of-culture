@@ -26,7 +26,7 @@ By the Proclamation of 12 October 1962 on the Offices of the Public Advocacy, th
 
 ## Instruments that feed the daily work
 
-- **Spiritual Penal Law (10 October 1962).** Defines the Public Curator (§10.00), the spiritual offences (Part Three), the modifiers (§65), and the rule that no search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (§200.15).
+- **[Spiritual Penal Law](/department/spiritual-code/) (10 October 1962).** Defines the Public Curator (§10.00), the spiritual offences (Part Three), the modifiers (§65), and the rule that no search, seizure or arrest is made in aid of a spiritual inquiry except by a law enforcement agency on a judicial warrant (§200.15).
 - **Mandate on Seditious Terminology (13 October 1962), art. V.** Every public servant must report seditious words, insults or slurs to the Department within two hours. The Department is the intake for the whole city.
 - **The Third Work (10 October 1962), Book Two, Part Ten.** Tells every servant to submit material before release, give Curators access, withdraw withheld works everywhere, and never warn anyone under review. A Curator's request is a request of the Office.
 - **Department of Culture Field Manual.** The Department's own forms and pipeline: Form C-STAMP, C-REVISE and C-BAN for prior review; C-DOSSIER for referral; PA-SPC-01 for the indictment; PA-DA-01 to the District Attorney for a warrant.
