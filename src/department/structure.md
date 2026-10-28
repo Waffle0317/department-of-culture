@@ -11,6 +11,8 @@ lead: The Department of Culture works through three divisions under one Director
   <div class="cmd__line"></div>
   <div class="cmd__box cmd__box--director"><b>Kulturdirektor</b><span>Director of Culture · Wilhelm Denker</span></div>
   <div class="cmd__line"></div>
+  <div class="cmd__box cmd__box--deputy"><b>Stellvertretender Kulturdirektor</b><span>Deputy Director of Culture · Richard Whitaker</span></div>
+  <div class="cmd__line"></div>
   <div class="flow">
     <div class="flow__box"><b>Abt. I · Regierung</b><p><em>Government · in the open</em><br>Governor, Mayor, Council<br>Council sessions, public texts<br>Conduct of officials</p></div>
     <div class="flow__box"><b>Abt. II · Schatten</b><p><em>Secret · anonymous, unseen</em><br>Gathers on anyone, anything<br>Informants and cover identities<br>Detention on Court order</p></div>

@@ -415,6 +415,7 @@ body.dept { background: var(--paper-2); }
 .cmd__box b { display: block; font-family: var(--condensed); text-transform: uppercase; letter-spacing: .12em; font-size: .85rem; }
 .cmd__box span { font-size: .92rem; color: var(--ink-2); }
 .cmd__box--director { border-color: var(--red); box-shadow: 4px 4px 0 var(--red); }
+.cmd__box--deputy { border-color: var(--red); }
 .cmd__line { width: 2px; height: 22px; background: var(--ink); }
 .cmd .flow { width: 100%; margin: 0; }
 .cmd .flow__box em { font-style: italic; color: var(--ink-2); }
