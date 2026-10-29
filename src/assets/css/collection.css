@@ -339,3 +339,8 @@
 .inc__thumb button { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); color: var(--red); font: 700 .9rem/1 var(--condensed); cursor: pointer; }
 .inc__status { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
 .inc__status select { font: inherit; font-family: var(--condensed); font-size: .9rem; padding: .3em .5em; border: 2px solid var(--ink); background: var(--paper); }
+
+/* ---------- sign-ins on the roll ---------- */
+.adm__logins { white-space: nowrap; font-size: .88rem; }
+.adm__logins b { color: var(--red); font-size: 1rem; }
+.adm__logins small { display: block; font: 400 .66rem var(--condensed); text-transform: uppercase; letter-spacing: .12em; color: var(--ink-2); margin-top: 2px; }

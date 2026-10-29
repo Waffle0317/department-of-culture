@@ -140,6 +140,8 @@ async function login({ request, env }) {
   }
 
   const token = await createSession(user, getSessionSecret(env));
+  // Every sign-in is noted for the admin hub's roll.
+  await env.DB.prepare("INSERT INTO logins (user_id) VALUES (?)").bind(user.id).run();
   // A temporary password goes straight to the page that replaces it.
   const dest = user.must_change ? `/department/password/?next=${encodeURIComponent(next)}` : next;
   return redirect(dest, { "Set-Cookie": sessionCookie(token) });

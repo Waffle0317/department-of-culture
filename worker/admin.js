@@ -68,7 +68,13 @@ async function syncRecord(env, user) {
 /* ---------- users ---------- */
 
 export async function listUsers({ env }) {
-  const users = (await env.DB.prepare(`SELECT ${USER_COLS} FROM users ORDER BY active DESC, name`).all()).results;
+  // With each member's sign-ins: how many ever, how many in the last thirty days, and the latest.
+  const users = (await env.DB.prepare(`
+    SELECT ${USER_COLS},
+      (SELECT COUNT(*) FROM logins l WHERE l.user_id = users.id) AS login_count,
+      (SELECT COUNT(*) FROM logins l WHERE l.user_id = users.id AND l.at >= datetime('now', '-30 days')) AS logins_30d,
+      (SELECT MAX(l.at) FROM logins l WHERE l.user_id = users.id) AS last_login
+    FROM users ORDER BY active DESC, name`).all()).results;
   return json({ users });
 }
 

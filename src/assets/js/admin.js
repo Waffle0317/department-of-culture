@@ -3,6 +3,7 @@
   "use strict";
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmtDate = (s) => { try { return new Date(String(s).replace(" ", "T") + "Z").toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); } catch { return s; } };
 
   async function api(method, url, body) {
     const r = await fetch(url, { method, credentials: "same-origin", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -38,6 +39,7 @@
         <td>${tierSel("tier_government", u.tier_government)}</td>
         <td><input type="checkbox" data-f="tier4" ${u.tier4 ? "checked" : ""}></td>
         <td><input type="checkbox" data-f="active" ${u.active ? "checked" : ""}></td>
+        <td class="adm__logins">${u.login_count ? `<b>${u.login_count}</b> <span>· ${u.logins_30d} in 30 days</span><small>last ${fmtDate(u.last_login)}</small>` : `<span class="muted">never</span>`}</td>
         <td class="actions">
           <button class="btn btn--red btn--sm" type="button" data-save disabled>Save</button>
           <button class="btn btn--ghost btn--sm" type="button" data-pass>Password</button>
