@@ -123,6 +123,7 @@ export async function updateUser({ env, user, request, params }) {
     tier_government: b.tier_government !== undefined ? tier(b.tier_government) : target.tier_government,
     tier4: b.tier4 !== undefined ? flag(b.tier4) : target.tier4,
   };
+  const wire = b.wire !== undefined ? flag(b.wire) : (target.wire ?? 1);
   if (id === user.id && (role !== "admin" || !active)) return error("You cannot remove your own admin access or deactivate yourself");
   if (role !== "admin" || !active) {
     const admins = (await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND active = 1 AND id != ?").bind(id).first()).n;
@@ -131,9 +132,9 @@ export async function updateUser({ env, user, request, params }) {
 
   const rank = b.rank !== undefined ? rankOf(b.rank) : target.rank;
   await env.DB.prepare(`
-    UPDATE users SET name = ?, role = ?, rank = ?, division = ?, active = ?, tier_public = ?, tier_secret = ?, tier_government = ?, tier4 = ?
+    UPDATE users SET name = ?, role = ?, rank = ?, division = ?, active = ?, tier_public = ?, tier_secret = ?, tier_government = ?, tier4 = ?, wire = ?
     WHERE id = ?`)
-    .bind(name, role, rank, division, active, t.tier_public, t.tier_secret, t.tier_government, t.tier4, id).run();
+    .bind(name, role, rank, division, active, t.tier_public, t.tier_secret, t.tier_government, t.tier4, wire, id).run();
 
   if (b.password) {
     if (String(b.password).length < 6) return error("Password must be at least 6 characters");

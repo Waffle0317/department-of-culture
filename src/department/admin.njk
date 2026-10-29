@@ -21,6 +21,7 @@ app: true
     <div class="adm__explain">
       <p><b>Tiers nest.</b> Tier 1 reads enlisted and NCO files, Tier 2 adds officers, Tier 3 adds general officers and government. Each is set per compartment, so a Curator can hold Tier 3 in Public and nothing in Secret. <b>Tier 4</b> reads everything in every compartment, including the Party tab.</p>
       <p><b>Adding to the roll</b> issues a temporary password: the Curator must choose their own at first sign-in, and nothing opens until they do. A password reset from this hub works the same way. It also opens their personnel record on the Party tab, placed in the first division ticked, with the rank chosen; later changes here to name, rank, division or active status carry over to that record.</p>
+      <p><b>Wire</b> opens or closes The Wire for the Curator. Unticked, the Wire does not appear in their sidebar at all, its page turns them back to the Desk, and nothing on it can be read or posted by them. Rooms and private messages they already had are kept, unseen, for when it is opened again.</p>
       <p><b>Sign-ins</b> counts every time the Curator has signed in, with the number in the last thirty days and when they last did. Counting began when this column was added; sign-ins before that are not known.</p>
       <p><b>Delete</b> removes an account for good, together with the personnel record the hub opened for it. Reports and files they wrote remain, unsigned. You cannot delete yourself or the last active admin; untick Active instead to suspend someone.</p>
       <p><b>Rank</b> is the Curator's standing in the Department, Public Advocate and Kulturdirektor down to Anwärter; it is shown beside their name and changes nothing about what they may read. <b>Divisions</b> are where the Curator sits in the Department: Abt. I Regierung (government, in the open), Abt. II Schatten (secret, unseen), Abt. III Öffentlichkeit (public, inside the agencies). A Curator may sit in more than one. <b>Admin</b> may edit any file, delete, and use this hub.</p>
@@ -29,7 +30,7 @@ app: true
       <table class="adm__table" id="usersTable">
         <thead><tr>
           <th>Username</th><th>Name</th><th>Rank</th><th>Role</th><th>Divisions</th>
-          <th>Public</th><th>Secret</th><th>Government</th><th>Tier 4</th><th>Active</th><th>Sign-ins</th><th></th>
+          <th>Public</th><th>Secret</th><th>Government</th><th>Tier 4</th><th>Active</th><th>Wire</th><th>Sign-ins</th><th></th>
         </tr></thead>
         <tbody></tbody>
       </table>

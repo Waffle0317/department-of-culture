@@ -253,7 +253,9 @@
   /* ---------- boot ---------- */
   (async function boot() {
     try {
-      const [me, mem, d] = await Promise.all([api("GET", "/api/me"), api("GET", "/api/members"), api("GET", "/api/chat/rooms")]);
+      const me = await api("GET", "/api/me");
+      if (!me.wire) { location.replace("/department/"); return; }
+      const [mem, d] = await Promise.all([api("GET", "/api/members"), api("GET", "/api/chat/rooms")]);
       state.me = me; state.members = mem.members; state.rooms = d.rooms;
       const want = (location.hash || "").slice(1);
       await openRoom(state.rooms.some((r) => r.id === want) ? want : "everyone");

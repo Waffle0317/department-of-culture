@@ -46,8 +46,13 @@ Central website of the Department of Culture, Office of the Public Advocate.
     the composer offers members of the roll and files on the Collection;
     a picked name is stored as `@[Name](u:id)` or `@[Name](p:id)` and shown
     as a link to that person's card (`/department/collection/#person/<id>`).
+    The Wire is switched on or off per member (`users.wire`, a checkbox on
+    the admin roll): off, the sidebar entry is not shown, the page turns
+    them back to the Desk, and every `/api/chat` route refuses them.
   - **Admin hub** (`/department/admin/`): the roll of Curators, their
-    clearances and passwords, and which compartment each organization is in.
+    clearances and passwords, the Wire switch, each member's sign-ins
+    (counted in a `logins` table), and which compartment each organization
+    is in.
 - **Database**: Cloudflare D1 (`wrangler.jsonc` → `d1_databases`). The Worker
   creates its tables and seeds organizations and ranks on first run. The
   `MEMBERS` secret is read once, on that first run, to create the first admin

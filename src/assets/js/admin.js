@@ -39,6 +39,7 @@
         <td>${tierSel("tier_government", u.tier_government)}</td>
         <td><input type="checkbox" data-f="tier4" ${u.tier4 ? "checked" : ""}></td>
         <td><input type="checkbox" data-f="active" ${u.active ? "checked" : ""}></td>
+        <td><input type="checkbox" data-f="wire" ${u.wire ? "checked" : ""} title="The Wire open to this Curator"></td>
         <td class="adm__logins">${u.login_count ? `<b>${u.login_count}</b> <span>· ${u.logins_30d} in 30 days</span><small>last ${fmtDate(u.last_login)}</small>` : `<span class="muted">never</span>`}</td>
         <td class="actions">
           <button class="btn btn--red btn--sm" type="button" data-save disabled>Save</button>

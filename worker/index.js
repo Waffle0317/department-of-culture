@@ -18,7 +18,7 @@ import * as inc from "./incidents.js";
 // A throwaway hash so a failed lookup costs the same time as a failed password.
 const DECOY = "pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
-// [method, pattern, handler, access]  access: "public" | "user" | "admin"
+// [method, pattern, handler, access]  access: "public" | "user" | "wire" (a user with the Wire switched on) | "admin"
 const ROUTES = [
   ["POST",   /^\/api\/login$/,                                login,            "public"],
   ["GET",    /^\/api\/login$/,                                () => redirect("/login/"), "public"],
@@ -65,13 +65,13 @@ const ROUTES = [
   ["POST",   /^\/api\/notes\/(\d+)\/unrestrict$/,             notes.unrestrict, "user"],
   ["DELETE", /^\/api\/notes\/(\d+)$/,                         notes.remove,     "user"],
 
-  ["GET",    /^\/api\/chat\/rooms$/,                          chat.listRooms,     "user"],
-  ["POST",   /^\/api\/chat\/dm$/,                              chat.openDm,        "user"],
-  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.listMessages,  "user"],
-  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/older$/,    chat.olderMessages, "user"],
-  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.postMessage,   "user"],
-  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/read$/,     chat.read,          "user"],
-  ["DELETE", /^\/api\/chat\/messages\/(\d+)$/,                chat.deleteMessage, "user"],
+  ["GET",    /^\/api\/chat\/rooms$/,                          chat.listRooms,     "wire"],
+  ["POST",   /^\/api\/chat\/dm$/,                              chat.openDm,        "wire"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.listMessages,  "wire"],
+  ["GET",    /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/older$/,    chat.olderMessages, "wire"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)$/,           chat.postMessage,   "wire"],
+  ["POST",   /^\/api\/chat\/rooms\/([a-z0-9:-]+)\/read$/,     chat.read,          "wire"],
+  ["DELETE", /^\/api\/chat\/messages\/(\d+)$/,                chat.deleteMessage, "wire"],
 
   ["GET",    /^\/api\/admin\/users$/,                         adm.listUsers,    "admin"],
   ["POST",   /^\/api\/admin\/users$/,                         adm.createUser,   "admin"],
@@ -110,6 +110,8 @@ async function api(request, env, url, path) {
         user = await currentUser(request, env);
         if (!user) return error("Sign in required", 401);
         if (access === "admin" && !isAdmin(user)) return error("Admin only", 403);
+        // The Wire is switched on or off per member from the admin hub.
+        if (access === "wire" && !user.wire) return error("The Wire is not open to you", 403);
         // A temporary password opens nothing but the page to replace it.
         if (user.must_change && !/^\/api\/(password|me|logout)$/.test(path)) return error("Choose your own word of passage first", 403);
       }
@@ -220,6 +222,7 @@ function me({ user }) {
       government: userTier(user, "government"),
     },
     tier4: !!user.tier4,
+    wire: !!user.wire,
     schatten: inSchatten(user),
     mustChange: !!user.must_change,
   });

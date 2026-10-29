@@ -84,7 +84,13 @@
         if (d.admin) {
           document.querySelectorAll("[data-admin-only]").forEach(function (el) { el.hidden = false; });
         }
-        if (!d.mustChange) startWireBadge();
+        // The Wire shows only for Curators it is open to; its page turns anyone else back to the Desk.
+        if (d.wire) {
+          document.querySelectorAll("[data-wire-only]").forEach(function (el) { el.hidden = false; });
+          if (!d.mustChange) startWireBadge();
+        } else if (location.pathname.indexOf("/department/chat") === 0) {
+          location.replace("/department/");
+        }
       })
       .catch(function () {});
   }
