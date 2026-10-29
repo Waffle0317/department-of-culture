@@ -7,7 +7,7 @@ lead: The Department of Culture works through three divisions under one Director
 ## Command structure
 
 <div class="cmd">
-  <div class="cmd__box cmd__box--top"><b>Public Advocate</b><span>{{ site.advocate }}</span></div>
+  <div class="cmd__box cmd__box--top"><b>Public Advocate</b><span>—</span></div>
   <div class="cmd__line"></div>
   <div class="cmd__box cmd__box--director"><b>Kulturdirektor</b><span>Director of Culture · Wilhelm Denker</span></div>
   <div class="cmd__line"></div>
